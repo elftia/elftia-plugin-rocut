@@ -105,12 +105,24 @@ bun $ROCUT/apps/cli/src/main.ts apply ops.json --target auto
   yet exposed through this CLI version** — do not claim visual correctness,
   only structural. Tell the user to look at the live pane.
 
-## Reviewable drafts (not yet in this version)
+## Drafts (review-before-commit)
 
-The automation layer beneath this CLI implements reviewable draft sessions
-(`discard`, journal bounds, TTL); CLI verbs for them are not exposed yet.
-Until they are: prefer small, reversible batches and tell the user before
-large structural changes. Do not simulate drafts with ad-hoc file editing.
+Multi-step or creative changes go through a draft so the user can review in
+the pane before anything is committed:
+
+```bash
+DRAFT=$(bun $ROCUT/apps/cli/src/main.ts draft begin --target auto)
+bun $ROCUT/apps/cli/src/main.ts draft stage ops.json --draft "$DRAFT" --target auto
+bun $ROCUT/apps/cli/src/main.ts draft approve --draft "$DRAFT" --target auto   # or reject / discard
+```
+
+- `approve` applies the whole staged journal as one atomic commit (one
+  revision bump, one undo step).
+- `reject` is a judged refusal; `discard` means nobody judged it — the outcome
+  carries `reason: "rejected" | "discarded" | "expired"` so you can tell the
+  user whether retrying the same work makes sense.
+- Tell the user a draft is awaiting their review — they approve visually in
+  the pane, not through you.
 
 ## Session-end honesty
 
