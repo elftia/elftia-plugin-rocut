@@ -32,17 +32,23 @@ second = 120000, one 30fps frame = 4000).
 
 ## Standard live session flow
 
-1. Start the host in the background (its lifetime is this session's):
+1. Start the host in the background (its lifetime is this session's), serving
+   the built web surface so the pane shows a REAL editor on the same project:
 
    ```bash
-   bun $ROCUT/apps/cli/src/main.ts host start <project-dir>
+   # build once per checkout — RELATIVE base is required (absolute asset
+   # paths escape the /<token>/ prefix and 401):
+   # (cd $ROCUT/apps/vite-example && OPENCUT_PUBLIC_BASE=./ bun run build)
+   bun $ROCUT/apps/cli/src/main.ts host start <project-dir> --static $ROCUT/apps/vite-example/dist
    ```
 
    The output prints a **target id**, an **editorUrl**
    (`http://127.0.0.1:<port>/<token>/` — authenticated loopback), and the pid.
    The project directory is the single source of truth: `<dir>/project.json`
    is created from a default seed if absent, and everything survives host
-   restarts.
+   restarts. The file is the full editor record (schemaVersion 31) with the
+   transaction envelope — the pane's editor session reads and writes the SAME
+   file through the host; your applies and the user's edits converge on it.
 
 2. Show the editor to the user with the **WebPane** tool (loopback http is
    allowed):
@@ -57,6 +63,10 @@ second = 120000, one 30fps frame = 4000).
    are printed only on explicit `host start`) — if you lost the editorUrl,
    stop the old host and `host start` again for the project directory, then
    use the fresh URL from your own output.
+
+   The pane live-syncs your commits (revision events) — the user SEES your
+   edits appear. Their own edits save back through the host with
+   revision-checked safety: nobody silently clobbers anybody.
 
 3. Route mutations through the live target: `--target auto` (or the printed
    target id).
@@ -90,6 +100,9 @@ bun $ROCUT/apps/cli/src/main.ts apply ops.json --target auto
 
 - A batch is **atomic**: any failing operation rejects the whole batch and the
   revision does not move.
+- A fresh project seeds with one video **main track** named `Main Track`
+  (revision 0) — it appears in `read` output and cannot be removed or retyped;
+  build your clips onto it.
 - `expectedRevision` enables optimistic concurrency — a mismatch rejects with
   `conflict` carrying the expected/actual revisions.
 - `idempotencyKey` deduplicates retries: the same key + same operations
@@ -101,9 +114,14 @@ bun $ROCUT/apps/cli/src/main.ts apply ops.json --target auto
 - Structural: `read --target auto` after edits — confirm tracks/clips counts
   and the revision advanced. The apply result also returns `createdIds`/
   `changedIds`; treat those as evidence, then re-read to confirm.
-- Composed-frame visual verification (deterministic wasm rendering) is **not
-  yet exposed through this CLI version** — do not claim visual correctness,
-  only structural. Tell the user to look at the live pane.
+- Composed-frame proof: `verify <tick> --target auto` returns the frame at a
+  MediaTime tick as a deterministic SHA-256 digest (plus frameIndex and the
+  ordered element list). Same project revision + same tick = same digest on
+  every machine, so you can assert "the frame at t is exactly what I
+  composed" — capture the digest after an edit and re-verify to detect drift.
+  Honest limit: this proves the COMPOSITION (elements, timing, geometry,
+  text, z-order, asset identities), not rasterization — pixels still belong
+  to the pane; for look-and-feel confirmations tell the user to look.
 
 ## Drafts (review-before-commit)
 
@@ -121,6 +139,10 @@ bun $ROCUT/apps/cli/src/main.ts draft approve --draft "$DRAFT" --target auto   #
 - `reject` is a judged refusal; `discard` means nobody judged it — the outcome
   carries `reason: "rejected" | "discarded" | "expired"` so you can tell the
   user whether retrying the same work makes sense.
+- If the user SAVES in the pane while your draft is open, the draft dies with
+  the record it was staged against: the next draft verb returns `404
+  unknown-draft`. That is the deterministic rule, not a failure — re-`read`,
+  restage against the current state, and tell the user their edit landed.
 - Tell the user a draft is awaiting their review — they approve visually in
   the pane, not through you.
 
