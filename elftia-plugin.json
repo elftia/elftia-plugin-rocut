@@ -1,0 +1,20 @@
+{
+  "name": "rocut",
+  "version": "0.1.0",
+  "kind": "agent",
+  "license": "MIT",
+  "displayName": "rocut video editor",
+  "description": "Drive the rocut agent-first video editor through its CLI: start a local backend host, show its authenticated editor URL in the workspace Web Pane, edit tracks/clips/assets/markers through revision-checked transaction batches via --target routing, verify structurally by re-reading, and rely on the project directory as the single source of truth. Requires a local rocut checkout with bun (S07 dogfood stage: no bundled build yet).",
+  "contributes": {
+    "agent": {
+      "skills": [
+        {
+          "id": "rocut-studio",
+          "path": "./skills/rocut-studio",
+          "displayName": "rocut video editor",
+          "recommendedAudience": "global"
+        }
+      ]
+    }
+  }
+}
