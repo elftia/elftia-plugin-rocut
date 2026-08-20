@@ -1,0 +1,27 @@
+{
+  "name": "elftia-plugin-rocut",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Elftia kind:agent plugin packaging the rocut agent-first video editor as a self-contained runtime: the bundled rocut CLI, its wasm sibling, the prebuilt editor surface, and the rocut-studio skill.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "vendor": "node scripts/vendor-rocut.mjs",
+    "build": "node scripts/build-dist.mjs",
+    "verify:vendor": "node scripts/verify-vendor.mjs",
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "test": "vitest run",
+    "pack": "elftia-plugin pack dist/rocut --out release",
+    "release": "elftia-plugin release dist/rocut --out release",
+    "verify": "npm test && npm run verify:vendor && npm run build && npm run verify:dist"
+  },
+  "devDependencies": {
+    "@elftia/plugin-kit": "^0.1.0",
+    "@types/node": "^24.7.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}
