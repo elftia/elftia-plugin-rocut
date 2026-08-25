@@ -100,7 +100,15 @@ describe("manifest", () => {
   it("no longer advertises a local checkout or bun", async () => {
     const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
     expect(manifest.name).toBe("rocut");
-    expect(manifest.kind).toBe("agent");
+    expect(manifest.kind).toBe("app-extension");
+    expect(manifest.contributes.main).toMatchObject({
+      entry: "index.cjs",
+      requiredMajor: 1,
+      requiredMinor: 51,
+      builtAgainst: "1.54.0",
+    });
+    expect(manifest.contributes.main.checksum).toMatch(/^[a-f0-9]{128}$/u);
+    expect(manifest.permissions).toContain("host:tool-hosts");
     // "no bun" is fine; "requires bun" is what must be gone.
     expect(manifest.description).not.toMatch(/requires?[^.]*bun/i);
     expect(manifest.description).not.toMatch(/with bun/i);

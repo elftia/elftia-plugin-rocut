@@ -1,11 +1,25 @@
 {
   "name": "rocut",
-  "version": "0.3.0",
-  "kind": "agent",
+  "version": "0.4.1",
+  "kind": "app-extension",
   "license": "MIT",
+  "permissions": [
+    "host:tool-hosts",
+    "node:fs",
+    "node:network",
+    "node:process",
+    "node:env"
+  ],
   "displayName": "rocut video editor",
   "description": "Drive the rocut agent-first video editor through its bundled CLI: start or join a local backend host, show its authenticated editor URL in the workspace Web Pane, edit tracks/clips/assets/markers through revision-checked transaction batches and reviewable drafts (begin/stage/approve/reject/discard) via --target routing, verify structurally by re-reading, and rely on the project directory as the single source of truth. Self-contained: the rocut runtime, its WebAssembly core and the prebuilt editor surface ship with the plugin and run on Elftia's managed Node 20+. No rocut checkout, no bun, no global install.",
   "contributes": {
+    "main": {
+      "entry": "index.cjs",
+      "checksum": "4a20738dc4980d62586a2d0af8e4000f2b763b1aa69d6eb6132de2799f1f63c80df0b71a0cd95fc88fd603c4554da433a4a23832086377c51070678b4aab8e45",
+      "requiredMajor": 1,
+      "requiredMinor": 51,
+      "builtAgainst": "1.54.0"
+    },
     "agent": {
       "skills": [
         {

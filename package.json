@@ -1,8 +1,8 @@
 {
   "name": "elftia-plugin-rocut",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "private": true,
-  "description": "Elftia kind:agent plugin packaging the rocut agent-first video editor as a self-contained runtime: the bundled rocut CLI, its wasm sibling, the prebuilt editor surface, and the rocut-studio skill.",
+  "description": "Elftia app-extension packaging rocut as a host-managed Tool Host plus its agent skill, bundled CLI, wasm sibling, and prebuilt editor surface.",
   "license": "MIT",
   "type": "module",
   "engines": {

@@ -3,7 +3,7 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Status: **0.3.0 — self-contained**. The plugin ships the built rocut runtime,
+Status: **0.4.1 — app-extension + self-contained Tool Host**. The plugin ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's
 managed Node 20+. No rocut checkout, no bun, no global install, and no
 experimental Node flags. Capabilities: `host ensure`/`host start` →
@@ -11,6 +11,26 @@ authenticated editorUrl → WebPane, `target list`, `read`/`apply` transaction
 batches with revision and idempotency semantics, draft verbs
 (begin/stage/approve/reject/discard), `verify <tick>` composed-frame digests,
 and automatic in-place migration of older-schema project directories.
+
+## Install and open the Pane
+
+Use an Elftia build with Host API **1.51 or newer**. Install `dist/rocut/` from
+the plugin manager (or install the packaged release), enable the plugin, then
+toggle it once or restart Elftia after replacing an older `kind: agent` build.
+
+There are two host-owned entry points:
+
+- In a chat with a working directory, bind `rocut-studio` globally or to that
+  chat's agent. A **rocut video editor** button then appears in the chat header,
+  immediately to the left of model parameters. It opens the latest project or
+  creates `rocut/new_project/` on first use.
+- Open **Files → Tool Hosts → rocut video editor** to create, list, or open a
+  specific project. This surface does not depend on skill audience binding, but
+  it does require the session to have a working directory.
+
+The Pane and daemon lifecycle belong to Elftia. The plugin's main half only
+registers the descriptor; it still contributes the original `rocut-studio`
+skill for agent-driven edits.
 
 ## Two-step build
 
@@ -71,6 +91,7 @@ and per-file digests in the shipped provenance rather than hiding them.
 | Path | What it is |
 | --- | --- |
 | `elftia-plugin.json` | authoring manifest (the shipped one is `dist/rocut/elftia-plugin.json`) |
+| `main/index.cjs` | registers the bundled rocut daemon as an Elftia Tool Host |
 | `upstream.json` | the committed pin: which rocut commit `vendor/` is built from |
 | `skills/rocut-studio/SKILL.md` | the operating manual (session flow, batch discipline, verification, host-lifetime honesty, hard rules) |
 | `licenses/` | authored licence inputs: `NOTICE.md` (copied into `vendor/`) and `branding-placeholder.svg` |

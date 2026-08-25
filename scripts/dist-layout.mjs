@@ -31,6 +31,7 @@ const RUN_FILE_PATTERN =
  */
 export const ARTIFACT_MAPPING = Object.freeze([
   { kind: "file", source: "elftia-plugin.json" },
+  { kind: "file", source: "main/index.cjs" },
   { kind: "file", source: "skills/rocut-studio/SKILL.md" },
   { kind: "file", source: "vendor/LICENSE" },
   { kind: "file", source: "vendor/NOTICE.md" },
@@ -41,12 +42,14 @@ export const ARTIFACT_MAPPING = Object.freeze([
 
 export const RUNTIME_ROOT_ENTRIES = Object.freeze([
   "elftia-plugin.json",
+  "main",
   "skills",
   "vendor",
 ]);
 
 export const REQUIRED_RUNTIME_FILES = Object.freeze([
   "elftia-plugin.json",
+  "main/index.cjs",
   "skills/rocut-studio/SKILL.md",
   "vendor/LICENSE",
   "vendor/NOTICE.md",
@@ -135,6 +138,10 @@ function compareEntries(left, right) {
 
 export function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+function sha512(bytes) {
+  return createHash("sha512").update(bytes).digest("hex");
 }
 
 function inventoryDigest(entries) {
@@ -363,10 +370,31 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     await readFile(path.join(treeRoot, "elftia-plugin.json"), "utf8"),
   );
   assert(manifest.name === PLUGIN_ID, `manifest name must be ${PLUGIN_ID}`);
-  assert(manifest.kind === "agent", "manifest kind must be agent");
+  assert(
+    manifest.kind === "app-extension",
+    "manifest kind must be app-extension",
+  );
   assert(
     typeof manifest.version === "string" && manifest.version.length > 0,
     "manifest version missing",
+  );
+  const main = manifest.contributes?.main;
+  assert(main?.entry === "index.cjs", "manifest main entry must be index.cjs");
+  const mainBytes = await readFile(path.join(treeRoot, "main", main.entry));
+  assert(
+    main?.checksum === sha512(mainBytes),
+    "manifest main checksum must match main/index.cjs",
+  );
+  assert(main?.requiredMajor === 1, "manifest main requiredMajor must be 1");
+  assert(main?.requiredMinor === 51, "manifest main requiredMinor must be 51");
+  assert(
+    typeof main?.builtAgainst === "string" && main.builtAgainst.length > 0,
+    "manifest main builtAgainst missing",
+  );
+  assert(
+    Array.isArray(manifest.permissions) &&
+      manifest.permissions.includes("host:tool-hosts"),
+    "manifest permissions must include host:tool-hosts",
   );
   const skills = manifest.contributes?.agent?.skills;
   assert(

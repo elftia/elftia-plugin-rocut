@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -22,6 +23,12 @@ const repoRoot = path.resolve(
 );
 
 const scratchDirs: string[] = [];
+const MAIN_FIXTURE = "module.exports = {};\n";
+
+function sha512Text(contents: string): string {
+  return createHash("sha512").update(contents, "utf8").digest("hex");
+}
+
 async function scratch(): Promise<string> {
   const dir = await mkdtemp(path.join(tmpdir(), "rocut-dist-test-"));
   scratchDirs.push(dir);
@@ -34,6 +41,7 @@ afterAll(async () => {
 /** A minimal but structurally valid install tree. */
 async function buildFakeTree(): Promise<string> {
   const root = path.join(await scratch(), "rocut");
+  await mkdir(path.join(root, "main"), { recursive: true });
   await mkdir(path.join(root, "skills", "rocut-studio"), { recursive: true });
   await mkdir(path.join(root, "vendor", "run"), { recursive: true });
   await mkdir(path.join(root, "vendor", "surface", "logos", "opencut", "svg"), {
@@ -44,12 +52,21 @@ async function buildFakeTree(): Promise<string> {
     JSON.stringify({
       name: "rocut",
       version: "0.0.0-test",
-      kind: "agent",
+      kind: "app-extension",
+      permissions: ["host:tool-hosts"],
       contributes: {
+        main: {
+          entry: "index.cjs",
+          checksum: sha512Text(MAIN_FIXTURE),
+          requiredMajor: 1,
+          requiredMinor: 51,
+          builtAgainst: "1.54.0",
+        },
         agent: { skills: [{ id: "rocut-studio", path: "./skills/rocut-studio" }] },
       },
     }),
   );
+  await writeFile(path.join(root, "main/index.cjs"), MAIN_FIXTURE);
   await writeFile(path.join(root, "skills/rocut-studio/SKILL.md"), "# skill\n");
   await writeFile(path.join(root, "vendor/LICENSE"), "MIT\n");
   await writeFile(path.join(root, "vendor/NOTICE.md"), "# notice\n");
@@ -73,6 +90,7 @@ describe("artifact mapping", () => {
   it("names every shipped path explicitly instead of excluding", () => {
     expect(ARTIFACT_MAPPING.map((rule) => rule.source)).toEqual([
       "elftia-plugin.json",
+      "main/index.cjs",
       "skills/rocut-studio/SKILL.md",
       "vendor/LICENSE",
       "vendor/NOTICE.md",
@@ -89,6 +107,7 @@ describe("artifact mapping", () => {
     );
     expect([...heads].sort()).toEqual([
       "elftia-plugin.json",
+      "main",
       "skills",
       "vendor",
     ]);
@@ -151,7 +170,7 @@ describe("install-tree validation fails closed", () => {
     const root = await buildFakeTree();
     const result = await validateRocutTree(root);
     expect(result.manifest.name).toBe("rocut");
-    expect(result.inventory.fileCount).toBe(11);
+    expect(result.inventory.fileCount).toBe(12);
   });
 
   it("rejects an extra root entry", async () => {
@@ -184,6 +203,14 @@ describe("install-tree validation fails closed", () => {
       /required runtime file missing: vendor\/run\/opencut_wasm_bg\.wasm/,
     );
     expect(REQUIRED_RUNTIME_FILES).toContain("vendor/run/rocut.mjs");
+  });
+
+  it("rejects a main entry whose bytes do not match the manifest checksum", async () => {
+    const root = await buildFakeTree();
+    await writeFile(path.join(root, "main/index.cjs"), "module.exports = { tampered: true };\n");
+    await expect(validateRocutTree(root)).rejects.toThrow(
+      /manifest main checksum must match main\/index\.cjs/,
+    );
   });
 
   it("rejects a tree with no esbuild chunk beside the entry", async () => {
