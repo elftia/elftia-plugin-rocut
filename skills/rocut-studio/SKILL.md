@@ -1,6 +1,6 @@
 ---
 name: rocut-studio
-description: Drive the rocut video editor through its bundled CLI — start or join a local backend host, show its authenticated editor URL in the user's workspace Web Pane, edit tracks/clips/assets/markers through revision-checked transaction batches via --target routing, verify structurally by re-reading, and rely on the project directory as the single source of truth. Use whenever the user wants to create or edit a video project, timeline, tracks, clips, markers, or project settings in rocut.
+description: Drive the rocut video editor through its bundled CLI — start or join a local backend host, show its authenticated editor URL in the user's workspace Web Pane, edit tracks/clips/assets/markers through revision-checked transaction batches via --target routing, verify structurally by re-reading, export the finished timeline to an mp4 or webm file through the user's open editor pane, and rely on the project directory as the single source of truth. Use whenever the user wants to create or edit a video project, timeline, tracks, clips, markers, or project settings in rocut.
 ---
 
 # rocut video editor (via the rocut CLI)
@@ -197,6 +197,49 @@ node $SKILL_DIR/../../vendor/run/rocut.mjs apply ops.json --target "$TARGET"
   Honest limit: this proves the COMPOSITION (elements, timing, geometry,
   text, z-order, asset identities), not rasterization — pixels still belong
   to the pane; for look-and-feel confirmations tell the user to look.
+
+## Export — turning the timeline into a file
+
+```bash
+node $SKILL_DIR/../../vendor/run/rocut.mjs export --out ./final-cut.mp4 --target "$TARGET"
+# --format mp4|webm (default mp4)  --quality low|medium|high|very_high (default high)
+# --no-audio to skip the audio pass
+```
+
+Blocks until the render settles, prints progress to stderr, and writes JSON to
+stdout with `status`, `hostPath` (inside the project's `exports/`) and, when
+`--out` was given, `outputPath`.
+
+**THE PANE MUST BE OPEN.** This is not a caveat to work around — it is how
+export works here. Rendering needs a GPU graphics stack (a 2D canvas context,
+WebGL for the compositor, WebCodecs for the encoder) and the host is a plain
+Node process that has none of them. So the host directs the editor pane the
+user already has open, and the pane renders. With no pane attached the command
+fails immediately and says so:
+
+```
+POST /export failed (409): no editor pane is attached to this host, so there is
+no renderer to export with — open the project's editor URL and retry
+```
+
+When you hit that, do not retry in a loop and do not report a broken export.
+Show the user the `editorUrl` (from `host ensure` / `target list`) and ask them
+to open it, then run the command again.
+
+Consequences worth knowing:
+
+- The user WATCHES the export happen — it renders in their pane, so the
+  progress you print and what they see are the same run.
+- One render at a time per pane. A second concurrent export is refused rather
+  than queued.
+- Closing or reloading the pane mid-render abandons that render; the job then
+  settles as failed rather than hanging forever.
+- There is no `--fps` override. The export uses the project's own frame rate,
+  which is nearly always what is wanted; frame rates are rationals (29.97 is
+  30000/1001) and a decimal override would silently drift.
+- Verify the result the way you verify anything else: check the file exists and
+  is non-trivial in size. `verify <tick>` proves COMPOSITION, not the encoded
+  pixels — for look-and-feel, tell the user to watch it.
 
 ## Drafts (review-before-commit)
 
