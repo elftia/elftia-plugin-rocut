@@ -25,7 +25,7 @@
   "contributes": {
     "main": {
       "entry": "index.cjs",
-      "checksum": "4a20738dc4980d62586a2d0af8e4000f2b763b1aa69d6eb6132de2799f1f63c80df0b71a0cd95fc88fd603c4554da433a4a23832086377c51070678b4aab8e45",
+      "checksum": "5fd7e65f7cc251991f9d18176529f46c12de5d7ed39725ea957d96ff52b5bc63a3b8a5b6d4a9a315e258d8cc993960d2d03d3853fe410df3e6b06b0e98d28f22",
       "requiredMajor": 1,
       "requiredMinor": 51,
       "builtAgainst": "1.54.0"
