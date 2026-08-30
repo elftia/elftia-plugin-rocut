@@ -101,7 +101,7 @@ and per-file digests in the shipped provenance rather than hiding them.
 | `tests/` | vitest coverage for the whitelist, the trademark gate, and the fail-closed paths |
 | `vendor/` | **gitignored** — the vendored runtime: `run/`, `surface/`, `LICENSE`, `NOTICE.md`, `PROVENANCE.md` |
 | `dist/rocut/` | **gitignored** — the only installable tree, produced by `npm run build` |
-| `release/<version>/` | **gitignored** — `rocut.zip` + `rocut.json` sidecar, produced by `npm run release` |
+| `release/<version>/` | **gitignored** — `rocut.epkg` + `rocut.json` sidecar, produced by `npm run release` |
 
 ## Licensing
 
