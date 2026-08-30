@@ -3,14 +3,16 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Status: **0.4.1 — app-extension + self-contained Tool Host**. The plugin ships the built rocut runtime,
+Status: **0.4.2 — app-extension + self-contained Tool Host**. The plugin ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's
 managed Node 20+. No rocut checkout, no bun, no global install, and no
 experimental Node flags. Capabilities: `host ensure`/`host start` →
 authenticated editorUrl → WebPane, `target list`, `read`/`apply` transaction
 batches with revision and idempotency semantics, draft verbs
 (begin/stage/approve/reject/discard), `verify <tick>` composed-frame digests,
-and automatic in-place migration of older-schema project directories.
+and automatic in-place migration of older-schema project directories. The
+0.4.2 surface opens directly in the editor without the old multi-step welcome
+onboarding.
 
 ## Install and open the Pane
 
@@ -49,7 +51,7 @@ npm run vendor -- --rocut <path-to-rocut-checkout>
 # 2. build + release — these work from vendor/ alone
 npm run build         # vendor/ -> dist/rocut/ (atomic swap, fails closed)
 npm run verify:dist   # re-check the published tree against the artifact mapping
-npm run release       # dist/rocut/ -> release/<version>/rocut.zip + rocut.json
+npm run release       # dist/rocut/ -> release/<version>/rocut.epkg + rocut.json
 ```
 
 `npm run build` fails closed with the exact `npm run vendor -- --rocut <path>`

@@ -1,6 +1,6 @@
 {
   "name": "rocut",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "kind": "app-extension",
   "license": "MIT",
   "permissions": [
@@ -14,7 +14,7 @@
     "provides": [
       {
         "id": "atelier.tool-host.rocut",
-        "version": "0.4.1",
+        "version": "0.4.2",
         "target": "main",
         "cardinality": "single"
       }
