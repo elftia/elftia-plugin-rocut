@@ -141,7 +141,8 @@ export function sha256(bytes) {
 }
 
 function sha512(bytes) {
-  return createHash("sha512").update(bytes).digest("hex");
+  // Canonical @elftia/plugin-kit form: `sha512-<base64>` over the entry bytes.
+  return `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
 }
 
 function inventoryDigest(entries) {

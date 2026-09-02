@@ -26,7 +26,7 @@ const scratchDirs: string[] = [];
 const MAIN_FIXTURE = "module.exports = {};\n";
 
 function sha512Text(contents: string): string {
-  return createHash("sha512").update(contents, "utf8").digest("hex");
+  return `sha512-${createHash("sha512").update(contents, "utf8").digest("base64")}`;
 }
 
 async function scratch(): Promise<string> {

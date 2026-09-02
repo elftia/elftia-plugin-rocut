@@ -1,6 +1,6 @@
 {
   "name": "rocut",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "kind": "app-extension",
   "license": "MIT",
   "permissions": [
@@ -14,7 +14,7 @@
     "provides": [
       {
         "id": "atelier.tool-host.rocut",
-        "version": "0.4.2",
+        "version": "0.4.3",
         "target": "main",
         "cardinality": "single"
       }
@@ -25,7 +25,7 @@
   "contributes": {
     "main": {
       "entry": "index.cjs",
-      "checksum": "5fd7e65f7cc251991f9d18176529f46c12de5d7ed39725ea957d96ff52b5bc63a3b8a5b6d4a9a315e258d8cc993960d2d03d3853fe410df3e6b06b0e98d28f22",
+      "checksum": "sha512-X9fmX3zCUZkfnRgXZSn0bBLeXX7TlyXqlX2W/1K1vGOjuKW21KmjFeJY2MyZOWDS0D04U/5BDfPmsGsOmNKPIg==",
       "requiredMajor": 1,
       "requiredMinor": 51,
       "builtAgainst": "1.54.0"

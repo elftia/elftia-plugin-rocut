@@ -107,7 +107,7 @@ describe("manifest", () => {
       requiredMinor: 51,
       builtAgainst: "1.54.0",
     });
-    expect(manifest.contributes.main.checksum).toMatch(/^[a-f0-9]{128}$/u);
+    expect(manifest.contributes.main.checksum).toMatch(/^sha512-[A-Za-z0-9+/]{86}==$/u);
     expect(manifest.permissions).toContain("host:tool-hosts");
     // "no bun" is fine; "requires bun" is what must be gone.
     expect(manifest.description).not.toMatch(/requires?[^.]*bun/i);
