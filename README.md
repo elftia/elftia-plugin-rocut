@@ -3,7 +3,7 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Status: **0.4.2 — app-extension + self-contained Tool Host**. The plugin ships the built rocut runtime,
+Status: **0.4.4 — Creator Studio project-workspace integration**. The plugin ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's
 managed Node 20+. No rocut checkout, no bun, no global install, and no
 experimental Node flags. Capabilities: `host ensure`/`host start` →
@@ -20,15 +20,9 @@ Use an Elftia build with Host API **1.51 or newer**. Install `dist/rocut/` from
 the plugin manager (or install the packaged release), enable the plugin, then
 toggle it once or restart Elftia after replacing an older `kind: agent` build.
 
-There are two host-owned entry points:
+On Elftia Host API 1.61 or newer, open **Creator Studio**, create a project by choosing its working folder, or resume a project card. This explicit action binds the available installed rocut skills to Creator Studio without changing other agents or granting global access. Select the **rocut** workspace Tab beside Canvas and Director Studio. It opens the latest project or creates `rocut/new_project/` on first use; switching Tabs preserves the live editor and daemon. Tool buttons no longer occupy the chat header.
 
-- In a chat with a working directory, bind `rocut-studio` globally or to that
-  chat's agent. A **rocut video editor** button then appears in the chat header,
-  immediately to the left of model parameters. It opens the latest project or
-  creates `rocut/new_project/` on first use.
-- Open **Files → Tool Hosts → rocut video editor** to create, list, or open a
-  specific project. This surface does not depend on skill audience binding, but
-  it does require the session to have a working directory.
+Other agents can use workspace tool Tabs after binding `rocut-studio` to the agent (or globally) in plugin settings. **Files → Tool Hosts → rocut video editor** remains available to create, list, or open a specific project, independent of skill audience binding. It requires a session working directory. Installing the plugin alone never grants skill access.
 
 The Pane and daemon lifecycle belong to Elftia. The plugin's main half only
 registers the descriptor; it still contributes the original `rocut-studio`

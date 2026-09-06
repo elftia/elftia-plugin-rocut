@@ -63,6 +63,10 @@ Migration is one-way and in-place: the record is rewritten at the current
 schema. If the user needs the old file, tell them to copy the project directory
 BEFORE you open it, not after.
 
+## Creator Studio projects
+
+Keep the Creator Studio session working directory as the project root. The rocut workspace Tab manages tool projects under `rocut/`; inspect `target list` and reuse the exact existing project and explicit target id. Do not create a second timeline at the root or replace the session working directory with a tool subfolder. If its editor is already visible in a workspace Tab, do not call WebPane again; the existing pane receives CLI edits live. Switching Canvas, Director, and rocut does not require restarting or stopping any host. Use the WebPane flow below only for an editor not already opened by the workspace.
+
 ## Standard live session flow
 
 1. Join the project's host, starting one only if none is live. `host ensure` is
