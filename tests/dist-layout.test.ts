@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -21,6 +22,9 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+const realVendorAvailable =
+  process.env.ROCUT_TEST_REAL_VENDOR !== "0" &&
+  existsSync(path.join(repoRoot, "vendor", "PROVENANCE.md"));
 
 const scratchDirs: string[] = [];
 const MAIN_FIXTURE = "module.exports = {};\n";
@@ -35,7 +39,8 @@ async function scratch(): Promise<string> {
   return dir;
 }
 afterAll(async () => {
-  for (const dir of scratchDirs) await rm(dir, { recursive: true, force: true });
+  for (const dir of scratchDirs)
+    await rm(dir, { recursive: true, force: true });
 });
 
 /** A minimal but structurally valid install tree. */
@@ -62,7 +67,9 @@ async function buildFakeTree(): Promise<string> {
           requiredMinor: 51,
           builtAgainst: "1.54.0",
         },
-        agent: { skills: [{ id: "rocut-studio", path: "./skills/rocut-studio" }] },
+        agent: {
+          skills: [{ id: "rocut-studio", path: "./skills/rocut-studio" }],
+        },
       },
     }),
   );
@@ -72,13 +79,22 @@ async function buildFakeTree(): Promise<string> {
   await writeFile(path.join(root, "vendor/NOTICE.md"), "# notice\n");
   await writeFile(path.join(root, "vendor/PROVENANCE.md"), "# provenance\n");
   await writeFile(path.join(root, "vendor/run/rocut.mjs"), "export {};\n");
-  await writeFile(path.join(root, "vendor/run/chunk-AAAAAAAA.js"), "export {};\n");
+  await writeFile(
+    path.join(root, "vendor/run/chunk-AAAAAAAA.js"),
+    "export {};\n",
+  );
   await writeFile(
     path.join(root, "vendor/run/opencut_wasm_bg.wasm"),
     Buffer.from([0x00, 0x61, 0x73, 0x6d]),
   );
-  await writeFile(path.join(root, "vendor/surface/index.html"), "<html></html>\n");
-  await writeFile(path.join(root, "vendor/surface/asset-manifest.json"), "{}\n");
+  await writeFile(
+    path.join(root, "vendor/surface/index.html"),
+    "<html></html>\n",
+  );
+  await writeFile(
+    path.join(root, "vendor/surface/asset-manifest.json"),
+    "{}\n",
+  );
   await writeFile(
     path.join(root, "vendor/surface/logos/opencut/svg/logo.svg"),
     "<svg/>\n",
@@ -100,46 +116,52 @@ describe("artifact mapping", () => {
     ]);
   });
 
-  it("ships nothing from the producer's own tooling", async () => {
-    const inventory = await inventoryRocutSources(repoRoot);
-    const heads = new Set(
-      inventory.entries.map((entry) => entry.path.split("/")[0]),
-    );
-    expect([...heads].sort()).toEqual([
-      "elftia-plugin.json",
-      "main",
-      "skills",
-      "vendor",
-    ]);
-    for (const forbidden of [
-      "tools",
-      "scripts",
-      "tests",
-      "licenses",
-      "node_modules",
-      "package.json",
-      "package-lock.json",
-      ".gitignore",
-    ]) {
-      expect(heads.has(forbidden)).toBe(false);
-    }
-  });
-
-  it("keeps vendor/run flat and limited to the three known shapes", async () => {
-    const inventory = await inventoryRocutSources(repoRoot);
-    const run = inventory.entries
-      .filter((entry) => entry.path.startsWith("vendor/run/"))
-      .map((entry) => entry.path.slice("vendor/run/".length));
-    expect(run.length).toBeGreaterThan(0);
-    for (const name of run) {
-      expect(name).not.toContain("/");
-      expect(name).toMatch(
-        /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/,
+  it.runIf(realVendorAvailable)(
+    "ships nothing from the producer's own tooling",
+    async () => {
+      const inventory = await inventoryRocutSources(repoRoot);
+      const heads = new Set(
+        inventory.entries.map((entry) => entry.path.split("/")[0]),
       );
-    }
-    expect(run).toContain("rocut.mjs");
-    expect(run).toContain("opencut_wasm_bg.wasm");
-  });
+      expect([...heads].sort()).toEqual([
+        "elftia-plugin.json",
+        "main",
+        "skills",
+        "vendor",
+      ]);
+      for (const forbidden of [
+        "tools",
+        "scripts",
+        "tests",
+        "licenses",
+        "node_modules",
+        "package.json",
+        "package-lock.json",
+        ".gitignore",
+      ]) {
+        expect(heads.has(forbidden)).toBe(false);
+      }
+    },
+  );
+
+  it.runIf(realVendorAvailable)(
+    "keeps vendor/run flat and limited to the three known shapes",
+    async () => {
+      const inventory = await inventoryRocutSources(repoRoot);
+      const run = inventory.entries
+        .filter((entry) => entry.path.startsWith("vendor/run/"))
+        .map((entry) => entry.path.slice("vendor/run/".length));
+      expect(run.length).toBeGreaterThan(0);
+      for (const name of run) {
+        expect(name).not.toContain("/");
+        expect(name).toMatch(
+          /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/,
+        );
+      }
+      expect(run).toContain("rocut.mjs");
+      expect(run).toContain("opencut_wasm_bg.wasm");
+    },
+  );
 });
 
 describe("trademark gate", () => {
@@ -147,7 +169,9 @@ describe("trademark gate", () => {
     const [digest, name] = [...FORBIDDEN_BRAND_DIGESTS.entries()][0];
     expect(() =>
       assertNoForbiddenBranding({
-        entries: [{ path: "vendor/surface/anywhere.svg", size: 1, sha256: digest }],
+        entries: [
+          { path: "vendor/surface/anywhere.svg", size: 1, sha256: digest },
+        ],
       }),
     ).toThrow(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });
@@ -156,13 +180,16 @@ describe("trademark gate", () => {
     expect(FORBIDDEN_BRAND_DIGESTS.size).toBe(8);
   });
 
-  it("passes for the real artifact mapping", async () => {
-    const inventory = await inventoryRocutSources(repoRoot);
-    expect(() => assertNoForbiddenBranding(inventory)).not.toThrow();
-    expect(
-      inventory.entries.some((entry) => entry.path === BRANDING_LOGO_PATH),
-    ).toBe(true);
-  });
+  it.runIf(realVendorAvailable)(
+    "passes for the real artifact mapping",
+    async () => {
+      const inventory = await inventoryRocutSources(repoRoot);
+      expect(() => assertNoForbiddenBranding(inventory)).not.toThrow();
+      expect(
+        inventory.entries.some((entry) => entry.path === BRANDING_LOGO_PATH),
+      ).toBe(true);
+    },
+  );
 });
 
 describe("install-tree validation fails closed", () => {
@@ -207,7 +234,10 @@ describe("install-tree validation fails closed", () => {
 
   it("rejects a main entry whose bytes do not match the manifest checksum", async () => {
     const root = await buildFakeTree();
-    await writeFile(path.join(root, "main/index.cjs"), "module.exports = { tampered: true };\n");
+    await writeFile(
+      path.join(root, "main/index.cjs"),
+      "module.exports = { tampered: true };\n",
+    );
     await expect(validateRocutTree(root)).rejects.toThrow(
       /manifest main checksum must match main\/index\.cjs/,
     );
@@ -262,7 +292,10 @@ describe("install-tree validation fails closed", () => {
   it("rejects an inventory that drifted from the artifact mapping", async () => {
     const root = await buildFakeTree();
     const expected = await inventoryRegularTree(root);
-    await writeFile(path.join(root, "vendor/surface/index.html"), "<html>x</html>\n");
+    await writeFile(
+      path.join(root, "vendor/surface/index.html"),
+      "<html>x</html>\n",
+    );
     await expect(validateRocutTree(root, expected)).rejects.toThrow(
       /dist inventory differs/,
     );

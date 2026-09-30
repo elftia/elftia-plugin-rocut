@@ -1,6 +1,6 @@
 {
   "name": "elftia-plugin-rocut",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "private": true,
   "description": "Elftia app-extension packaging rocut as a host-managed Tool Host plus its agent skill, bundled CLI, wasm sibling, and prebuilt editor surface.",
   "license": "MIT",

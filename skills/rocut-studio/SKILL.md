@@ -1,6 +1,6 @@
 ---
 name: rocut-studio
-description: Drive the rocut video editor through its bundled CLI — start or join a local backend host, show its authenticated editor URL in the user's workspace Web Pane, edit tracks/clips/assets/markers through revision-checked transaction batches via --target routing, verify structurally by re-reading, export the finished timeline to an mp4 or webm file through the user's open editor pane, and rely on the project directory as the single source of truth. Use whenever the user wants to create or edit a video project, timeline, tracks, clips, markers, or project settings in rocut.
+description: Drive the rocut video editor through its bundled CLI — start or join a local backend host, show its authenticated editor URL in the user's workspace Web Pane, edit timeline entities and Rust-planned motion text through revision-checked commands, verify structurally by re-reading, export through the user's open editor pane, and rely on the project directory as the single source of truth. Use whenever the user wants to create or edit a video project, timeline, motion typography, lyrics, tracks, clips, markers, or project settings in rocut.
 ---
 
 # rocut video editor (via the rocut CLI)
@@ -31,7 +31,8 @@ node --version   # need >= 20; if node is missing/older, tell the user to instal
 Invoke the CLI as `node <entry> <command>`:
 
 ```bash
-node $SKILL_DIR/../../vendor/run/rocut.mjs target list
+CLI="$SKILL_DIR/../../vendor/run/rocut.mjs"
+node "$CLI" target list
 ```
 
 There is no other copy to reach for. Do not look for a rocut checkout, a
@@ -86,7 +87,7 @@ Keep the Creator Studio session working directory as the project root. The rocut
 
    The project directory is the single source of truth: `<dir>/project.json`
    is created from a default seed if absent, and everything survives host
-   restarts. The file is the full editor record (schemaVersion 31) with the
+   restarts. The file is the full editor record (schemaVersion 32) with the
    transaction envelope — the pane's editor session reads and writes the SAME
    file through the host; your applies and the user's edits converge on it.
 
@@ -123,13 +124,10 @@ Keep the Creator Studio session working directory as the project root. The rocut
    revision-checked safety: nobody silently clobbers anybody.
 
 3. Route mutations through the live target — and make sure it is YOUR project
-   before you mutate anything. `--target auto` resolves NEWEST-FIRST,
-   FIRST-ALIVE: it filters by target id when you pass one, and never by
-   project directory, even though the registry records one. So with two live
-   hosts on the machine, `auto` can hand a session working on project B the
-   host serving project A, and every `apply` after that lands in the wrong
-   `project.json` — silently, no error, no conflict, because that host really
-   is live and really does accept the batch.
+   before you mutate anything. `--target auto` succeeds only when exactly one
+   live target exists; with multiple live targets it fails and lists the
+   candidates. Prefer the explicit target id printed by `host ensure`, or use
+   `--project <dir>` when reconnecting by path.
 
    Prefer an explicit target id over `auto`. rocut makes that easy: the target
    id IS the project directory's basename, sanitized to `[A-Za-z0-9._-]`, and
@@ -142,17 +140,18 @@ Keep the Creator Studio session working directory as the project root. The rocut
    ```
 
    Confirm against `target list` that the `project=` recorded for `$TARGET` is
-   your project directory, before the first mutation. If you ever do fall back
-   to `--target auto`, check that same field on the entry `auto` will resolve
-   to — the first row whose pid is still ALIVE, which is not always the first
-   row printed, because the listing does not filter dead entries.
+   your project directory before the first mutation. Do not work around an
+   `auto is ambiguous` error; select the correct explicit target or project.
 
 ## Editing — transaction batches
 
-Write an operations JSON file, then apply it. Operation kinds: `create-track`,
+Write an operations JSON file, then apply it. General operation kinds:
+`create-track`,
 `update-track`, `delete-track`, `create-clip`, `update-clip`, `delete-clip`,
 `create-asset`, `delete-asset`, `create-marker`, `update-marker`,
-`delete-marker`, `update-project`.
+`delete-marker`, `update-project`. The transaction contract also contains
+motion-text sequence operations, but agents must use the high-level
+`motion-text` commands below so Rust owns parsing, planning and resolved cuts.
 
 ```bash
 # read current state first (never guess ids)
@@ -177,8 +176,9 @@ node $SKILL_DIR/../../vendor/run/rocut.mjs apply ops.json --target "$TARGET"
 - A batch is **atomic**: any failing operation rejects the whole batch and the
   revision does not move.
 - A fresh project seeds with one video **main track** named `Main Track`
-  (revision 0) — it appears in `read` output and cannot be removed or retyped;
-  build your clips onto it.
+  (revision 0). `read` keeps the legacy entity counts and adds full stable IDs
+  under `entities`. Motion text requires a `graphic` track; its create command
+  makes one when `trackId` is omitted.
 - `expectedRevision` enables optimistic concurrency — a mismatch rejects with
   `conflict` carrying the expected/actual revisions. A conflict is NORMAL when
   the user is editing at the same time, not a fault: re-`read`, rebuild the
@@ -188,11 +188,126 @@ node $SKILL_DIR/../../vendor/run/rocut.mjs apply ops.json --target "$TARGET"
   returns the original result; the same key + different operations rejects
   with `duplicate`.
 
+## Motion text and JIZURA presets — use the Rust-owned commands
+
+First confirm that the bundled runtime exposes the capability:
+
+```bash
+node "$CLI" motion-text catalog --target "$TARGET"
+node "$CLI" motion-text list --target "$TARGET"
+```
+
+`catalog` returns the supported JIZURA preset catalog, starter presets,
+planning-control defaults and renderer-support version. `list` returns the
+full stored sequences, including stable sequence/cue/cut IDs and both project
+and sequence revisions. If `motion-text` is an unknown command, the installed
+plugin is old: explain that limitation and stop. Never emulate the feature by
+editing `project.json` or by constructing a resolved sequence for `apply`.
+
+Create from plain text or LRC with one atomic sequence+clip commit:
+
+```json
+{
+  "source": "LIGHTS RISE\nWE MOVE",
+  "sourceFormat": "plain",
+  "language": "en",
+  "duration": 360000,
+  "startTime": 0,
+  "starterPreset": "impact-title",
+  "seed": 7,
+  "expectedRevision": 0,
+  "idempotencyKey": "creator:motion-text:lights-rise:v1"
+}
+```
+
+```bash
+node "$CLI" motion-text create create-motion-text.json --target "$TARGET"
+```
+
+`trackId` is optional. If supplied, it must be a real `graphic` track ID from
+`read.entities.tracks`; otherwise rocut creates a graphic track and returns its
+ID. Rocut deterministically derives the sequence/clip/new-track IDs from the
+idempotency key, so a retry returns the same IDs and revision.
+
+To import a JIZURA v1 project, use the same command with
+`sourceFormat: "jizura"` and put the inert project JSON text in `source`.
+Omit `duration`, `language`, `starterPreset`, and `seed`: Rust imports those
+semantics and returns `compatibilityReport`, `resourcesNeeded`, and
+diagnostics. Missing required resources remain explicit; do not claim a
+fully faithful import when the report says approximated or unsupported.
+
+Edit an existing sequence by reading its current IDs/revisions and sending one
+canonical mutation:
+
+```json
+{
+  "mutation": {
+    "kind": "update-planning-controls",
+    "controls": {
+      "presetSets": { "horror": false, "typo": true, "kinetic": true },
+      "unify": true,
+      "centerFree": true,
+      "centerDirection": "tb"
+    }
+  },
+  "expectedRevision": 1,
+  "expectedSequenceRevision": 0,
+  "idempotencyKey": "creator:motion-text:planning:v1"
+}
+```
+
+```bash
+node "$CLI" motion-text mutate <sequence-id> mutation.json --target "$TARGET"
+```
+
+Supported mutation kinds are `update-planning-controls`, `update-defaults`,
+`set-cut-boundary`, `set-cue-lock`, `update-cue`, `apply-cue-taps`,
+`set-audio-binding`, `sync-audio-timing`, `set-audio-beat-override`, and
+`clear-audio-binding`. Audio synchronization is therefore a mutation, not a
+second timing implementation in Creator Studio.
+
+Generate a local variation candidate without committing it:
+
+```json
+{
+  "salt": 11,
+  "cueIds": ["<cue-id-from-list>"],
+  "groups": ["style", "layout", "enter"],
+  "expectedSequenceRevision": 1
+}
+```
+
+```bash
+node "$CLI" motion-text vary <sequence-id> variation.json --target "$TARGET"
+```
+
+The response carries the base/candidate sequence revisions, affected cue/cut
+IDs and the candidate for review. To apply it, add the current
+`expectedRevision` and a fresh `idempotencyKey` to the same file, then rerun
+with `--apply`. Never apply a candidate after either revision has changed.
+
+```bash
+node "$CLI" motion-text vary <sequence-id> variation.json --apply --target "$TARGET"
+```
+
+Both project-revision and sequence-revision conflicts are normal concurrency
+signals. Sequence conflicts use code `motion-text-sequence-conflict` and carry
+expected/actual sequence revisions. Re-run `read`/`motion-text list`, rebuild
+the intent against the new state, use a new idempotency key if the operation
+changed, and retry. CLI HTTP
+failures print a human message followed by a JSON details line containing the
+host's stable `code`, expected/actual revisions, and diagnostics.
+An exact retry in the same host session returns `replayed: true`; changing the
+intent while reusing its key returns `motion-text-idempotency-conflict`.
+
 ## Verify before claiming success
 
-- Structural: `read --target "$TARGET"` after edits — confirm tracks/clips counts
-  and the revision advanced. The apply result also returns `createdIds`/
-  `changedIds`; treat those as evidence, then re-read to confirm.
+- Structural: `read --target "$TARGET"` after edits — confirm counts, the
+  revision, and the stable IDs in `entities`. After motion-text work, also run
+  `motion-text list` and verify the returned sequence revision, cue/cut IDs,
+  planning controls or audio binding. Mutation results include `affected`,
+  `createdIds`/`changedIds`, and diagnostics; treat them as evidence, then
+  re-read to confirm.
 - Composed-frame proof: `verify <tick> --target "$TARGET"` returns the frame at a
   MediaTime tick as a deterministic SHA-256 digest (plus frameIndex and the
   ordered element list). Same project revision + same tick = same digest on
@@ -227,7 +342,7 @@ no renderer to export with — open the project's editor URL and retry
 ```
 
 When you hit that, do not retry in a loop and do not report a broken export.
-Show the user the `editorUrl` (from `host ensure` / `target list`) and ask them
+Show the user the `editorUrl` from `host ensure` and ask them
 to open it, then run the command again.
 
 Consequences worth knowing:
@@ -293,12 +408,15 @@ the machine, not just the ones you started.
 
 ## Hard rules
 
-- Never edit `<project-dir>/project.json` by hand — always via `apply`
-  (revision checks, atomicity, and watch events live there).
-- Never guess track/clip/asset/marker ids — read them from `read` output.
-- Never mutate through a target you have not confirmed is your project —
-  `--target auto` is project-blind (step 3), and picking wrong corrupts
-  someone else's project instead of failing.
+- Never edit `<project-dir>/project.json` by hand — always via a CLI mutation
+  command (revision checks, atomicity, and watch events live there).
+- Never submit motion-text sequence objects or resolved plans through generic
+  `apply`; use `motion-text create|mutate|vary`, which call the Rust factory.
+- Never guess track/clip/asset/marker/sequence/cue/cut ids — read them from
+  `read` or `motion-text list` output.
+- Never mutate through a target you have not confirmed is your project.
+  `--target auto` is allowed only when its exactly-one-live-target check
+  succeeds; under ambiguity select an explicit `--target` or `--project`.
 - One host per project directory; don't start a second host for the same
   directory — the target id is the directory's basename, so a second start
   overwrites the first one's registry entry and secret while the first process

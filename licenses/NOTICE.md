@@ -238,6 +238,51 @@ paths or usernames; upstream's `check-wasm-paths` gate asserts this.
 | `logos/opencut/svg/logo.svg` | **Placeholder authored for this repository** | MIT with this repository. See §2. |
 | `workers/c4-worker-fixture.js`, `surface-evidence.html`, `assets/surface-evidence-*.js`, `module-graph.json` | Upstream verification fixtures emitted by the surface build | MIT with the upstream repository. Shipped verbatim so `vendor/surface/` stays byte-faithful to upstream's own asset allowlist. |
 
+### 7.1 Offline motion-text fonts — `vendor/surface/motion-text/fonts/`
+
+The motion-text renderer ships **19 digest-pinned TTF files** plus one OFL 1.1
+notice each, for 38 files and 117,539,061 bytes under
+`motion-text/fonts/`. They are the offline glyph closure the Rust font catalog
+resolves by stable role ID; the renderer verifies each file's SHA-256 and its
+missing-glyph set before drawing, and export fails closed on a missing glyph.
+
+**motion-text/fonts are distributed under OFL-1.1.** Every font is an
+unmodified upstream Google Fonts release, and the exact per-family licence text
+ships beside the bytes as `motion-text/fonts/licenses/<family>-OFL.txt`. The
+set is pinned to Google Fonts repository revision
+`23e54b51ddffbc7713c583748e3bd86f62b1fa4a`; the M PLUS Rounded 1c notice is
+additionally pinned to `coz-m/MPLUS_FONTS@eb604901d6f04b6f7f2a84b0378c58df84a9dba6`.
+
+| Family | Shipped as | Role(s) |
+| --- | --- | --- |
+| Noto Sans JP | `noto-sans-jp-variable.ttf` | gothic_black, gothic_bold, gothic_light, gothic_med |
+| Noto Serif JP | `noto-serif-jp-variable.ttf` | mincho, mincho_black, mincho_bold, mincho_light |
+| Noto Sans SC | `noto-sans-sc-variable.ttf` | gothic_bold_zh_hans (the `gothic_bold` role's zh-Hans variant) |
+| Dela Gothic One | `dela-gothic-one-regular.ttf` | dela |
+| Zen Kaku Gothic New | `zen-kaku-gothic-new-black.ttf` | zenkaku |
+| Zen Old Mincho | `zen-old-mincho-black.ttf` | mincho_black |
+| Kaisei Tokumin | `kaisei-tokumin-extrabold.ttf` | tokumin |
+| M PLUS Rounded 1c | `m-plus-rounded-1c-extrabold.ttf` | round |
+| Mochiy Pop One | `mochiy-pop-one-regular.ttf` | pop |
+| DotGothic16 | `dot-gothic-16-regular.ttf` | dot |
+| Yuji Syuku | `yuji-syuku-regular.ttf` | brush |
+| IBM Plex Mono | `ibm-plex-mono-medium.ttf` | mono |
+| Reggae One | `reggae-one-regular.ttf` | reggae |
+| Rampart One | `rampart-one-regular.ttf` | rampart |
+| Potta One | `potta-one-regular.ttf` | potta |
+| Kiwi Maru | `kiwi-maru-medium.ttf` | kiwi |
+| Klee One | `klee-one-semibold.ttf` | klee |
+| Shippori Mincho B1 | `shippori-mincho-b1-extrabold.ttf` | shippori |
+| IBM Plex Sans JP | `ibm-plex-sans-jp-medium.ttf` | sansui |
+
+This set is **not** a claim of general CJK coverage: 22 roles declare Japanese
+and English, `mono` declares English only, and only the `gothic_bold_zh_hans`
+variant declares Chinese. `zh-Hant` and `ko` have no offline glyph closure and
+are rejected by the missing-glyph gate rather than served by a system fallback.
+`vendor/PROVENANCE.md` carries the SHA-256 of every shipped font and licence
+file; the authoritative role-to-asset mapping is upstream's
+`rust/crates/motion-text/resources/jizura-font-catalog.json`.
+
 ## 8. Build tooling — not shipped
 
 `esbuild`, `vite`, `bun`, `wasm-pack`, `turbo`, `typescript` and

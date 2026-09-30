@@ -61,6 +61,23 @@ describe("the skill drives the bundled runtime, not a checkout", () => {
     }
   });
 
+  it("routes motion text through the Rust-owned high-level CLI", async () => {
+    const text = await skill();
+    for (const marker of [
+      "schemaVersion 32",
+      "motion-text catalog",
+      "motion-text create",
+      "motion-text mutate",
+      "motion-text vary",
+      "expectedSequenceRevision",
+      "motion-text-sequence-conflict",
+      "Never submit motion-text sequence objects or resolved plans",
+    ]) {
+      expect(text).toContain(marker);
+    }
+    expect(text).not.toContain("schemaVersion 31");
+  });
+
   it("does not tell the agent to set the obsolete wasm flag", async () => {
     const flat = (await skill()).replace(/\s+/g, " ");
     // The flag was the pre-bundling mitigation and is now inert. Wherever it is

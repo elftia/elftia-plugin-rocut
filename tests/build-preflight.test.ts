@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,6 +11,9 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+const realVendorAvailable =
+  process.env.ROCUT_TEST_REAL_VENDOR !== "0" &&
+  existsSync(path.join(repoRoot, "vendor", "PROVENANCE.md"));
 
 const scratchDirs: string[] = [];
 async function scratch(): Promise<string> {
@@ -18,7 +22,8 @@ async function scratch(): Promise<string> {
   return dir;
 }
 afterAll(async () => {
-  for (const dir of scratchDirs) await rm(dir, { recursive: true, force: true });
+  for (const dir of scratchDirs)
+    await rm(dir, { recursive: true, force: true });
 });
 
 /**
@@ -51,7 +56,10 @@ describe("build preflight when vendor/ is absent or incomplete", () => {
   it("names the missing files when vendor/ is half-populated", async () => {
     const fake = await scratch();
     await mkdir(path.join(fake, "vendor", "run"), { recursive: true });
-    await writeFile(path.join(fake, "vendor", "run", "rocut.mjs"), "export {};\n");
+    await writeFile(
+      path.join(fake, "vendor", "run", "rocut.mjs"),
+      "export {};\n",
+    );
     await expect(buildDist({ repoRoot: fake })).rejects.toThrow(
       /vendor\/ is incomplete — missing .*vendor\/PROVENANCE\.md/,
     );
@@ -62,16 +70,18 @@ describe("build preflight when vendor/ is absent or incomplete", () => {
     await expect(buildDist({ repoRoot: fake })).rejects.not.toThrow(/ENOENT/);
   });
 
-  it("passes preflight for the real repository", async () => {
-    // Only asserts the preflight gate, not a full build: reaching the provenance
-    // verification means vendor/ is present and complete.
-    await expect(
-      (async () => {
-        const { verifyVendorAgainstProvenance } = await import(
-          "../scripts/provenance.mjs"
-        );
-        return verifyVendorAgainstProvenance(path.join(repoRoot, "vendor"));
-      })(),
-    ).resolves.toBeTruthy();
-  });
+  it.runIf(realVendorAvailable)(
+    "passes preflight for the real repository",
+    async () => {
+      // Only asserts the preflight gate, not a full build: reaching the provenance
+      // verification means vendor/ is present and complete.
+      await expect(
+        (async () => {
+          const { verifyVendorAgainstProvenance } =
+            await import("../scripts/provenance.mjs");
+          return verifyVendorAgainstProvenance(path.join(repoRoot, "vendor"));
+        })(),
+      ).resolves.toBeTruthy();
+    },
+  );
 });

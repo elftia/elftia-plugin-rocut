@@ -3,7 +3,7 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Status: **0.4.4 — Creator Studio project-workspace integration**. The plugin ships the built rocut runtime,
+Status: **0.5.0 — native motion text and JIZURA presets**. The plugin ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's
 managed Node 20+. No rocut checkout, no bun, no global install, and no
 experimental Node flags. Capabilities: `host ensure`/`host start` →
@@ -13,6 +13,16 @@ batches with revision and idempotency semantics, draft verbs
 and automatic in-place migration of older-schema project directories. The
 0.4.2 surface opens directly in the editor without the old multi-step welcome
 onboarding.
+
+## 0.5.0 changes and verification status
+
+- Native motion-text sequences, cue editing, locks, variations, audio timing and JIZURA project import.
+- 889 drawable presets and 19 bundled offline font assets, including Simplified Chinese coverage.
+- Public `motion-text catalog|list|create|mutate|vary` commands with revision conflicts and stable IDs.
+- Media bodies survive HTTP-host project reload; CLI exports include audio unless `--no-audio` is set.
+- The 0.4.4 development candidate produced full and selected-range 1080p exports. This is historical smoke evidence, not acceptance of the 0.5.0 artifact. Installed performance measurements and the actual Creator Studio entry flow remain open; G8/G9 must not be marked complete from the smoke runner.
+
+The plugin version is independent of the SDK package versions and the existing tool-host capability ABI.
 
 ## Install and open the Pane
 
@@ -52,6 +62,14 @@ npm run release       # dist/rocut/ -> release/<version>/rocut.epkg + rocut.json
 command when `vendor/` is missing or incomplete — you will never get a bare
 ENOENT from inside a copy loop.
 
+`npm test` is safe in a fresh clone: all 47 producer/source tests run without a
+generated `vendor/` tree. When `vendor/PROVENANCE.md` exists, five additional
+integration assertions automatically verify the real artifact mapping,
+trademark closure, build preflight and provenance, for 52 tests total. Set
+`ROCUT_TEST_REAL_VENDOR=0` only to reproduce the clean-clone test mode while a
+local vendor tree exists; `npm run verify` still requires and verifies the real
+vendor/build outputs.
+
 ### The pin
 
 `upstream.json` is the **committed pin of record**. Because `vendor/` is
@@ -84,18 +102,18 @@ and per-file digests in the shipped provenance rather than hiding them.
 
 ## Layout
 
-| Path | What it is |
-| --- | --- |
-| `elftia-plugin.json` | authoring manifest (the shipped one is `dist/rocut/elftia-plugin.json`) |
-| `main/index.cjs` | registers the bundled rocut daemon as an Elftia Tool Host |
-| `upstream.json` | the committed pin: which rocut commit `vendor/` is built from |
-| `skills/rocut-studio/SKILL.md` | the operating manual (session flow, batch discipline, verification, host-lifetime honesty, hard rules) |
-| `licenses/` | authored licence inputs: `NOTICE.md` (copied into `vendor/`) and `branding-placeholder.svg` |
-| `scripts/` | the producer (`vendor-rocut`, `build-dist`, `verify-*`, `dist-layout`, `atomic-tree-swap`, `provenance`) |
-| `tests/` | vitest coverage for the whitelist, the trademark gate, and the fail-closed paths |
-| `vendor/` | **gitignored** — the vendored runtime: `run/`, `surface/`, `LICENSE`, `NOTICE.md`, `PROVENANCE.md` |
-| `dist/rocut/` | **gitignored** — the only installable tree, produced by `npm run build` |
-| `release/<version>/` | **gitignored** — `rocut.epkg` + `rocut.json` sidecar, produced by `npm run release` |
+| Path                           | What it is                                                                                               |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `elftia-plugin.json`           | authoring manifest (the shipped one is `dist/rocut/elftia-plugin.json`)                                  |
+| `main/index.cjs`               | registers the bundled rocut daemon as an Elftia Tool Host                                                |
+| `upstream.json`                | the committed pin: which rocut commit `vendor/` is built from                                            |
+| `skills/rocut-studio/SKILL.md` | the operating manual (session flow, batch discipline, verification, host-lifetime honesty, hard rules)   |
+| `licenses/`                    | authored licence inputs: `NOTICE.md` (copied into `vendor/`) and `branding-placeholder.svg`              |
+| `scripts/`                     | the producer (`vendor-rocut`, `build-dist`, `verify-*`, `dist-layout`, `atomic-tree-swap`, `provenance`) |
+| `tests/`                       | vitest coverage for the whitelist, the trademark gate, and the fail-closed paths                         |
+| `vendor/`                      | **gitignored** — the vendored runtime: `run/`, `surface/`, `LICENSE`, `NOTICE.md`, `PROVENANCE.md`       |
+| `dist/rocut/`                  | **gitignored** — the only installable tree, produced by `npm run build`                                  |
+| `release/<version>/`           | **gitignored** — `rocut.epkg` + `rocut.json` sidecar, produced by `npm run release`                      |
 
 ## Licensing
 

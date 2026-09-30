@@ -1,0 +1,31 @@
+name: Plugin source CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # vendor/ and dist/ are intentionally absent in a source checkout. The
+      # synthetic producer tests still exercise all manifest, notice,
+      # provenance, trademark and install-tree failure paths; packaging runs
+      # the five real-vendor assertions later through npm run verify.
+      - name: Install source-test dependencies
+        run: npm ci
+
+      - name: Run producer source tests
+        run: npm test

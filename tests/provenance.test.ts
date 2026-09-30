@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -16,6 +17,9 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+const realVendorAvailable =
+  process.env.ROCUT_TEST_REAL_VENDOR !== "0" &&
+  existsSync(path.join(repoRoot, "vendor", "PROVENANCE.md"));
 
 const scratchDirs: string[] = [];
 async function scratch(): Promise<string> {
@@ -24,7 +28,8 @@ async function scratch(): Promise<string> {
   return dir;
 }
 afterAll(async () => {
-  for (const dir of scratchDirs) await rm(dir, { recursive: true, force: true });
+  for (const dir of scratchDirs)
+    await rm(dir, { recursive: true, force: true });
 });
 
 async function buildFakeVendor(): Promise<string> {
@@ -73,15 +78,17 @@ describe("provenance document", () => {
     const text = await readFile(path.join(vendor, "PROVENANCE.md"), "utf8");
     expect(text).toContain("`?? .scratch/`");
     expect(text).toContain("untracked");
-    expect(readProvenanceFact(text, "Upstream source commit")).toBe("0".repeat(40));
+    expect(readProvenanceFact(text, "Upstream source commit")).toBe(
+      "0".repeat(40),
+    );
   });
 
   it("excludes itself from its own manifest", async () => {
     const vendor = await buildFakeVendor();
     const text = await readFile(path.join(vendor, "PROVENANCE.md"), "utf8");
-    expect(parseProvenanceManifest(text).some((e) => e.path === "PROVENANCE.md")).toBe(
-      false,
-    );
+    expect(
+      parseProvenanceManifest(text).some((e) => e.path === "PROVENANCE.md"),
+    ).toBe(false);
   });
 });
 
@@ -94,7 +101,10 @@ describe("vendor verification fails closed", () => {
 
   it("rejects an altered file", async () => {
     const vendor = await buildFakeVendor();
-    await writeFile(path.join(vendor, "run/rocut.mjs"), "export const x = 1;\n");
+    await writeFile(
+      path.join(vendor, "run/rocut.mjs"),
+      "export const x = 1;\n",
+    );
     await expect(verifyVendorAgainstProvenance(vendor)).rejects.toThrow(
       /altered: run\/rocut\.mjs/,
     );
@@ -191,11 +201,14 @@ describe("uncommitted upstream changes are disclosed, not hidden", () => {
 });
 
 describe("the real vendored tree", () => {
-  it("matches its own provenance manifest", async () => {
-    const result = await verifyVendorAgainstProvenance(
-      path.join(repoRoot, "vendor"),
-    );
-    expect(result.fileCount).toBeGreaterThan(300);
-    expect(result.upstreamCommit).toMatch(/^[0-9a-f]{40}$/);
-  });
+  it.runIf(realVendorAvailable)(
+    "matches its own provenance manifest",
+    async () => {
+      const result = await verifyVendorAgainstProvenance(
+        path.join(repoRoot, "vendor"),
+      );
+      expect(result.fileCount).toBeGreaterThan(300);
+      expect(result.upstreamCommit).toMatch(/^[0-9a-f]{40}$/);
+    },
+  );
 });

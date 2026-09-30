@@ -129,7 +129,9 @@ async function readPin() {
     raw = await readFile(pinPath, "utf8");
   } catch (error) {
     if (error?.code === "ENOENT") {
-      fail(`upstream.json is missing — it is the committed pin of record for vendor/`);
+      fail(
+        `upstream.json is missing — it is the committed pin of record for vendor/`,
+      );
     }
     throw error;
   }
@@ -171,9 +173,7 @@ async function copyTree(sourceRoot, destinationRoot, options = {}) {
     const children = await readdir(absoluteSource, { withFileTypes: true });
     children.sort((left, right) => (left.name < right.name ? -1 : 1));
     for (const child of children) {
-      const childRelative = relative
-        ? `${relative}/${child.name}`
-        : child.name;
+      const childRelative = relative ? `${relative}/${child.name}` : child.name;
       if (child.isDirectory()) {
         if (options.filePattern !== undefined) {
           fail(`unexpected nested directory in a flat tree: ${childRelative}`);
@@ -205,12 +205,180 @@ async function copyTree(sourceRoot, destinationRoot, options = {}) {
   return copied;
 }
 
+function resolveManifestAsset(surfaceRoot, logicalPath) {
+  if (
+    typeof logicalPath !== "string" ||
+    logicalPath.length === 0 ||
+    logicalPath.includes("\\") ||
+    path.isAbsolute(logicalPath) ||
+    path.posix.normalize(logicalPath) !== logicalPath ||
+    logicalPath
+      .split("/")
+      .some((segment) => segment === "" || segment === "." || segment === "..")
+  ) {
+    fail(
+      `surface asset manifest has a non-canonical logical path: ${logicalPath}`,
+    );
+  }
+  const root = path.resolve(surfaceRoot);
+  const candidate = path.resolve(root, ...logicalPath.split("/"));
+  const relative = path.relative(root, candidate);
+  if (
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  ) {
+    fail(`surface asset manifest path escapes surface/: ${logicalPath}`);
+  }
+  return candidate;
+}
+
+export async function validateSurfaceAssetManifest(surfaceRoot, manifest) {
+  if (!Array.isArray(manifest?.files)) {
+    fail("surface asset manifest must contain a files array");
+  }
+  if (manifest.fileCount !== manifest.files.length) {
+    fail(
+      `surface asset manifest fileCount ${manifest.fileCount} does not match ${manifest.files.length} entries`,
+    );
+  }
+  const seen = new Set();
+  let totalBytes = 0;
+  for (const [index, file] of manifest.files.entries()) {
+    const logicalPath = file?.path;
+    if (seen.has(logicalPath)) {
+      fail(`surface asset manifest contains duplicate path: ${logicalPath}`);
+    }
+    seen.add(logicalPath);
+    if (!Number.isSafeInteger(file?.bytes) || file.bytes < 0) {
+      fail(`surface asset manifest files[${index}].bytes is invalid`);
+    }
+    if (!/^[a-f0-9]{64}$/.test(file?.sha256 ?? "")) {
+      fail(`surface asset manifest files[${index}].sha256 is invalid`);
+    }
+    let bytes;
+    try {
+      bytes = await readFile(resolveManifestAsset(surfaceRoot, logicalPath));
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        fail(`surface asset manifest file is missing: ${logicalPath}`);
+      }
+      throw error;
+    }
+    if (bytes.length !== file.bytes) {
+      fail(
+        `surface asset manifest byte mismatch for ${logicalPath}: expected ${file.bytes}, found ${bytes.length}`,
+      );
+    }
+    const digest = sha256(bytes);
+    if (digest !== file.sha256) {
+      fail(
+        `surface asset manifest digest mismatch for ${logicalPath}: expected ${file.sha256}, found ${digest}`,
+      );
+    }
+    if (/^motion-text\/fonts\/licenses\/[^/]+-OFL\.txt$/.test(logicalPath)) {
+      if (
+        bytes.length >= 3 &&
+        bytes[0] === 0xef &&
+        bytes[1] === 0xbb &&
+        bytes[2] === 0xbf
+      ) {
+        fail(
+          `motion-text font license must be UTF-8 without a BOM: ${logicalPath}`,
+        );
+      }
+      let licenseText;
+      try {
+        licenseText = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      } catch {
+        fail(`motion-text font license is not valid UTF-8: ${logicalPath}`);
+      }
+      if (!licenseText.includes("SIL OPEN FONT LICENSE Version 1.1")) {
+        fail(`motion-text font license is not OFL 1.1: ${logicalPath}`);
+      }
+    }
+    totalBytes += bytes.length;
+  }
+  if (manifest.totalBytes !== totalBytes) {
+    fail(
+      `surface asset manifest totalBytes ${manifest.totalBytes} does not match ${totalBytes}`,
+    );
+  }
+  const actualMotionTextPaths = [];
+  const motionTextRoot = path.join(surfaceRoot, "motion-text");
+  const walkMotionText = async (directory, relative = "motion-text") => {
+    const entries = await readdir(directory, { withFileTypes: true });
+    entries.sort((left, right) =>
+      left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+    );
+    for (const entry of entries) {
+      const logicalPath = `${relative}/${entry.name}`;
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walkMotionText(absolutePath, logicalPath);
+      } else if (entry.isFile()) {
+        actualMotionTextPaths.push(logicalPath);
+      } else {
+        fail(
+          `surface motion-text closure contains a special file: ${logicalPath}`,
+        );
+      }
+    }
+  };
+  if (existsSync(motionTextRoot)) await walkMotionText(motionTextRoot);
+  const manifestMotionTextPaths = [...seen]
+    .filter((logicalPath) => logicalPath.startsWith("motion-text/"))
+    .sort();
+  if (
+    JSON.stringify(actualMotionTextPaths) !==
+    JSON.stringify(manifestMotionTextPaths)
+  ) {
+    fail(
+      `surface motion-text closure does not match asset-manifest.json: expected ${manifestMotionTextPaths.join(", ")}; found ${actualMotionTextPaths.join(", ")}`,
+    );
+  }
+  return {
+    fileCount: seen.size,
+    totalBytes,
+    motionTextFileCount: actualMotionTextPaths.length,
+  };
+}
+
+export function assertMotionTextFontNotice(manifest, noticeText) {
+  const motionTextFonts = manifest.files.filter((file) =>
+    /^motion-text\/fonts\/[^/]+\.ttf$/.test(file.path),
+  );
+  if (motionTextFonts.length === 0) return { required: false, fonts: 0 };
+  const motionTextLicenses = manifest.files.filter((file) =>
+    /^motion-text\/fonts\/licenses\/[^/]+-OFL\.txt$/.test(file.path),
+  );
+  if (motionTextLicenses.length === 0) {
+    fail(
+      "motion-text fonts ship without an OFL license file in the surface manifest",
+    );
+  }
+  if (
+    typeof noticeText !== "string" ||
+    !noticeText.includes("motion-text/fonts") ||
+    !noticeText.includes("OFL-1.1")
+  ) {
+    fail(
+      "licenses/NOTICE.md must disclose the shipped motion-text/fonts closure and OFL-1.1 before vendoring it",
+    );
+  }
+  return {
+    required: true,
+    fonts: motionTextFonts.length,
+    licenses: motionTextLicenses.length,
+  };
+}
+
 /**
  * Rewrite the surface's own asset inventory so it describes the bytes that
  * actually ship. Leaving it verbatim would have it claim eight branding files
  * that were deliberately removed — an inventory that lies is worse than none.
  */
-async function rewriteAssetManifest(surfaceRoot, placeholderBytes) {
+export async function rewriteAssetManifest(surfaceRoot, placeholderBytes) {
   const manifestPath = path.join(surfaceRoot, "asset-manifest.json");
   const original = await readFile(manifestPath, "utf8");
   const manifest = JSON.parse(original);
@@ -243,6 +411,7 @@ async function rewriteAssetManifest(surfaceRoot, placeholderBytes) {
       `${BRANDING_LOGO_RELATIVE} is a neutral placeholder. See vendor/PROVENANCE.md.`,
     removed: dropped.map((file) => ({ path: file.path, sha256: file.sha256 })),
   };
+  await validateSurfaceAssetManifest(surfaceRoot, manifest);
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   return {
     original: sha256(Buffer.from(original, "utf8")),
@@ -250,6 +419,7 @@ async function rewriteAssetManifest(surfaceRoot, placeholderBytes) {
       Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, "utf8"),
     ),
     dropped,
+    manifest,
   };
 }
 
@@ -370,15 +540,21 @@ export async function vendorRocut(options = {}) {
   const runFiles = [];
   for (const child of await readdir(packOut, { withFileTypes: true })) {
     if (!child.isFile() || !RUN_FILE_PATTERN.test(child.name)) continue;
-    await copyFile(path.join(packOut, child.name), path.join(runRoot, child.name));
+    await copyFile(
+      path.join(packOut, child.name),
+      path.join(runRoot, child.name),
+    );
     runFiles.push(child.name);
   }
-  if (!runFiles.includes("rocut.mjs")) fail("vendor/run did not receive rocut.mjs");
+  if (!runFiles.includes("rocut.mjs"))
+    fail("vendor/run did not receive rocut.mjs");
   if (!runFiles.includes("opencut_wasm_bg.wasm")) {
     fail("vendor/run did not receive the opencut_wasm_bg.wasm sibling");
   }
   if (!runFiles.some((name) => name.startsWith("chunk-"))) {
-    fail("vendor/run received no esbuild chunk — the split-bundle contract broke");
+    fail(
+      "vendor/run received no esbuild chunk — the split-bundle contract broke",
+    );
   }
   log(`vendor: run/ ${runFiles.length} file(s): ${runFiles.sort().join(", ")}`);
 
@@ -440,6 +616,17 @@ export async function vendorRocut(options = {}) {
     surfaceRoot,
     placeholderBytes,
   );
+  const noticeSource = path.join(pluginRoot, "licenses", "NOTICE.md");
+  const noticeText = await readFile(noticeSource, "utf8");
+  const fontNotice = assertMotionTextFontNotice(
+    manifestRewrite.manifest,
+    noticeText,
+  );
+  if (fontNotice.required) {
+    log(
+      `vendor: NOTICE covers ${fontNotice.fonts} motion-text font file(s) and ${fontNotice.licenses} OFL notice(s)`,
+    );
+  }
   substitutions.push({
     path: "surface/asset-manifest.json",
     reason:
@@ -465,10 +652,7 @@ export async function vendorRocut(options = {}) {
     path.join(upstreamRoot, "LICENSE"),
     path.join(vendorRoot, "LICENSE"),
   );
-  await copyFile(
-    path.join(pluginRoot, "licenses", "NOTICE.md"),
-    path.join(vendorRoot, "NOTICE.md"),
-  );
+  await copyFile(noticeSource, path.join(vendorRoot, "NOTICE.md"));
 
   const entries = await inventoryVendorTree(vendorRoot);
   const facts = {
@@ -482,10 +666,9 @@ export async function vendorRocut(options = {}) {
         "utf8",
       ),
     ).version,
-    bunVersion: toolVersion(
-      process.platform === "win32" ? "bun.exe" : "bun",
-      ["--version"],
-    ),
+    bunVersion: toolVersion(process.platform === "win32" ? "bun.exe" : "bun", [
+      "--version",
+    ]),
     platform: `${process.platform} ${process.arch}`,
     dirtyEntries: tree.untracked,
     modifiedTracked,
