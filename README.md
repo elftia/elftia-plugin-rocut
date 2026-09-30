@@ -16,6 +16,8 @@ onboarding.
 
 ## 0.5.0 changes and verification status
 
+- The embedded Tool Host pane fills its viewport with the editor only: no demo banner, outer frame, project-title header, Export button, or theme toggle. Timeline/preview editing and agent-driven exports remain available; the standalone demo keeps its own chrome.
+
 - Native motion-text sequences, cue editing, locks, variations, audio timing and JIZURA project import.
 - 889 drawable presets and 19 bundled offline font assets, including Simplified Chinese coverage.
 - Public `motion-text catalog|list|create|mutate|vary` commands with revision conflicts and stable IDs.
