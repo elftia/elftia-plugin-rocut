@@ -1,7 +1,7 @@
 {
   "$comment": "The pinned rocut upstream this plugin vendors. vendor/ is NOT committed (see .gitignore), so THIS committed file is the pin of record: without it a fresh clone would have no way to know which commit to build from. `npm run vendor` refuses to pack an upstream checkout whose HEAD is not this commit. Moving the pin is a deliberate edit here, reviewed like any other change.",
   "repository": "https://github.com/DumoeDss/rocut",
-  "commit": "62a34e4f8edd3001ae95571ad09065cfb3a6b24e",
+  "commit": "7ae7d65d2d5b43b75f6165996147e4008e69270d",
   "prerequisites": [
     "node script/build-wasm.mjs && bun install --frozen-lockfile",
     "npm run check:wasm",
