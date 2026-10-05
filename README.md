@@ -16,7 +16,8 @@ onboarding.
 
 ## 0.5.0 changes and verification status
 
-- The embedded Tool Host pane fills its viewport with the editor only: no demo banner, outer frame, project-title header, Export button, or theme toggle. Timeline/preview editing and agent-driven exports remain available; the standalone demo keeps its own chrome.
+- The embedded Tool Host pane fills its viewport with the editor only: no demo banner, outer frame, project-title header, outer Export button, or theme toggle. The internal asset-rail footer menu provides **Export project** and **Keyboard shortcuts** without restoring a second header. Export settings scroll inside short panes; cancelling or closing an export can be retried, and closing dialogs restores keyboard focus to the menu. The standalone demo keeps its own chrome.
+- Installed checkpoint (2026-10-05): real Elftia UI downloads a full three-second H.264 MP4 with video, Chinese motion text and audible AAC, and a 1.5-second VP9 WebM cue range with audio disabled. Independent decoding verifies output content. This is bounded UI acceptance, not complete codec/project/performance coverage; see the upstream `docs/elftia-integration-repair.md`.
 
 - Native motion-text sequences, cue editing, locks, variations, audio timing and JIZURA project import.
 - 889 drawable presets and 19 bundled offline font assets, including Simplified Chinese coverage.
