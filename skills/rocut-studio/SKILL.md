@@ -285,6 +285,12 @@ invalidated draft requires re-reading and generating a fresh candidate. If the
 host rejects the independent preview endpoint, report that the plugin needs an
 update; never retry without `--preview`, which would commit immediately.
 
+In Elftia, the user can open Editor menu → Review agent changes to inspect
+the complete before/after values and approve or reject the pending proposal.
+Leave the draft pending for that review; do not approve it on the user's behalf
+without authorization. The UI binds its decision to the reviewed snapshot;
+additional staging makes that decision stale and requires a fresh review.
+
 Generate a local variation candidate without committing it:
 
 ```json
