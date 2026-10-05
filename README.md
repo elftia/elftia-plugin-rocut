@@ -18,12 +18,13 @@ onboarding.
 
 - The embedded Tool Host pane fills its viewport with the editor only: no demo banner, outer frame, project-title header, outer Export button, or theme toggle. The internal asset-rail footer menu provides **Export project** and **Keyboard shortcuts** without restoring a second header. Export settings scroll inside short panes; cancelling or closing an export can be retried, and closing dialogs restores keyboard focus to the menu. The standalone demo keeps its own chrome.
 - Installed checkpoint (2026-10-05): real Elftia UI downloads a full three-second H.264 MP4 with video, Chinese motion text and audible AAC, and a 1.5-second VP9 WebM cue range with audio disabled. Independent decoding verifies output content. This is bounded UI acceptance, not complete codec/project/performance coverage; see the upstream `docs/elftia-integration-repair.md`.
+- Runtime f93ce325 restores the paused preview after export success, failure or cancellation. Actual installed-Elftia screenshots confirm the current playhead is repainted without seeking; the underlying project is unchanged. Source lifecycle regression, Vite typecheck/build, 52 producer tests and deterministic/vendor/dist checks pass. The real Creator Studio entry and same-project Agent continuation are exercised, but the uninterrupted combined export pixel gate remains unresolved; see upstream repair notes for the retained failures.
 
 - Native motion-text sequences, cue editing, locks, variations, audio timing and JIZURA project import.
 - 889 drawable presets and 19 bundled offline font assets, including Simplified Chinese coverage.
 - Public `motion-text catalog|list|create|mutate|vary` commands with revision conflicts and stable IDs.
 - Media bodies survive HTTP-host project reload; CLI exports include audio unless `--no-audio` is set.
-- The 0.4.4 development candidate produced full and selected-range 1080p exports. This is historical smoke evidence, not acceptance of the 0.5.0 artifact. Installed performance measurements and the actual Creator Studio entry flow remain open; G8/G9 must not be marked complete from the smoke runner.
+- The 0.4.4 development candidate produced full and selected-range 1080p exports. This is historical smoke evidence, not acceptance of the 0.5.0 artifact. Comprehensive performance acceptance and remaining combined-workflow branches remain open; G8/G9 must not be marked complete from the smoke runner.
 
 The plugin version is independent of the SDK package versions and the existing tool-host capability ABI.
 
