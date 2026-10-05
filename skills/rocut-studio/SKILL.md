@@ -266,6 +266,25 @@ Supported mutation kinds are `update-planning-controls`, `update-defaults`,
 `clear-audio-binding`. Audio synchronization is therefore a mutation, not a
 second timing implementation in Creator Studio.
 
+For an edit that needs manual review, use the read-only mutation preview:
+
+```bash
+node "$CLI" motion-text mutate <sequence-id> mutation.json --preview --target "$TARGET"
+```
+
+Only `mutation` and `expectedSequenceRevision` are required in preview mode.
+The response has `applied: false`, current `projectRevision`,
+`baseSequenceRevision`, `candidateSequenceRevision`, and a Rust-produced
+`candidate`. It neither changes the committed project nor consumes a write
+idempotency key. Begin the manual draft before generating this candidate,
+then stage one `update-motion-text-sequence` operation with its `sequenceId`,
+`expectedSequenceRevision: baseSequenceRevision`, and `sequence: candidate`.
+Forward that candidate unchanged; never reconstruct its resolved plan. Obtain
+the user's approval of the specific changes before `draft approve`. A stale or
+invalidated draft requires re-reading and generating a fresh candidate. If the
+host rejects the independent preview endpoint, report that the plugin needs an
+update; never retry without `--preview`, which would commit immediately.
+
 Generate a local variation candidate without committing it:
 
 ```json
