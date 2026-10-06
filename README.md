@@ -25,6 +25,8 @@ Fresh current-candidate continuous **`live-jVQHOT` passes 35/35**, zero page err
 
 ### Presentation tracing (diagnostic, not an acceptance gate)
 
+Performance work is handed to a separate session; use [the performance handoff](docs/performance-session-handoff.md) for ownership, current evidence, exact commands and remaining gates. The development session continues functional work and must not concurrently drive the shared performance instance.
+
 `scripts/probe-owned-presentation-trace.mjs` uses the Elftia CLI connection and requires explicit `ELFTIA_WORKTREE`, `ROCUT_WORKTREE`, `ELFTIA_TEST_SESSION`, `ELFTIA_CLI_DEBUG_PORT`, `ELFTIA_INSTALLED_ROCUT`, `ELFTIA_REUSE_TEST_PROJECT` and `ELFTIA_RESTORE_TEST_PROJECT`. Both projects must resolve inside the owned `.tmp-rocut-e2e/project` folder; the source must contain the 120-cue fixture. The script verifies the active session/folder and installed app hash, observes 20 seconds of real playback, and restores the playhead, authored projection, prior project and viewport. Trace-cleanup failure does not skip project restoration. No model download, runtime modification or user-project operation is involved.
 
 - The broad discovery `presentation-trace-KyubVL` remains preserved: 127,551,794 bytes / 676,378 events. The narrowed `presentation-trace-15JsPg` collects only `blink.user_timing` and `disabled-by-default-devtools.timeline.frame`: **12,293,191 bytes / 52,724 events**, SHA-256 `40b969382af39586e10465f0e5f80bc015ffc6b3fd94ef291cdd0f50928f3945`. It passes diagnostic collection/restoration with zero renderer errors on the unchanged installed runtime. This is not a before/after runtime performance comparison.
