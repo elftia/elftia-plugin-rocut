@@ -16,6 +16,7 @@ onboarding.
 
 ## 0.5.0 changes and verification status
 
+- Host-specific probes now belong to this consumer's `scripts/`, not portable Rocut. Fresh current-runtime `ab3d0155` continuous `live-FXmevH` passes **35/35** actual-Elftia checks, zero captured errors, through the relocated entry. Assertions and gates are unchanged. Six Node preflight/loader tests and the existing 52 producer tests pass. This supersedes the older statement below that continuous workflow was not rerun for Sounds; it does not refresh latency, historical-upgrade, online-provider or comprehensive GPU/resource acceptance. Rocut's unchanged local boundary gate still fails on untracked scratch probes; their authorized archive/removal was rejected by the execution layer and not bypassed. No runtime repack, version bump or installation was needed for test relocation.
 - Current pinned runtime `ab3d0155` fixes native audition ownership, actual Save/Add/Clear events, durable media-backed sound insertion, authenticated namespace clearing and failure recovery. Actual Elftia `installed-sound-insertion-JCv6vz` passes **7/7**: Saved audition/release, exact attachment bytes and decoded duration, Undo/Redo, provider-disconnected reopen/playback, independently decoded menu export, injected clear failure with Reload recovery, and real clear preserving imported audio. Zero page errors; the prior dedicated project is restored. Expanded component regression passes 11/11; isolated async-store suite passes 17 tests / 98 assertions; CLI/Vite typecheck, build, 52 producer tests, deterministic packaging and 356-file installed parity pass. Earlier installed failures remain documented upstream. This is a generated local fixture, not live online-provider/search acceptance.
 - Reproduce with consumer-owned `scripts/probe-installed-sound-insertion.mjs` through the Elftia `node_modules/tsx/dist/cli.mjs` loader. Required environment: `ELFTIA_WORKTREE`, `ROCUT_WORKTREE` (shared neutral test helpers), `ELFTIA_TEST_SESSION`, `ELFTIA_CLI_DEBUG_PORT`, `ELFTIA_REUSE_TEST_PROJECT` (owned project to restore). It creates a separate E2E project and changes browser download behavior only for its test, restoring afterward; no real user project, external account or provider credential is used.
 - Previous runtime `9199bd8c` fixes Sounds query/filter isolation, first-page and pagination parameter parity, duplicate page requests and late responses. It exposes actionable failures and Retry without adding editor chrome. Local-response real-component regression passes 7/7; request/parser/isolated-store suites pass 10 tests, Vite typecheck/build and scoped lint pass. Producer 52 tests, deterministic double-pack, vendor/dist and independently backed-up 356-file installed parity pass. Actual Elftia `installed-sounds-EVuapX` passes 4/4 unconfigured-host panel checks with no captured errors, no sound-search network requests and unchanged dedicated project bytes. This does not configure or prove an online provider. Run the consumer-owned `scripts/probe-installed-sounds.mjs` with explicit owned session, project and host settings through the Elftia tsx loader.
@@ -118,6 +119,44 @@ against that manifest and fail closed on missing, undeclared or altered files.
 The vendor step also refuses an upstream tree with modified tracked files unless
 `--allow-modified-tracked` is passed, which discloses the paths, the diffstat
 and per-file digests in the shipped provenance rather than hiding them.
+
+## Real-host test ownership
+
+Current-source SDK packed-manifest closure passes for all four freshly packed
+artifacts (0 failures / 0 refusals). This does not resolve previously captured
+consumer dependency security advisories or the source's local scratch boundary
+failure.
+
+Elftia-specific interaction, workflow, Agent, layout, migration and GPU/lifecycle
+drivers live in this repository's `scripts/`. Their host-neutral helpers remain
+in the Rocut checkout. Set `ROCUT_WORKTREE` explicitly: the loader validates the
+checkout, refuses traversal and never infers a private sibling from the current
+directory. It reuses that checkout's existing Playwright dependency without
+installing anything into Elftia. These drivers are development tools, not shipped
+plugin runtime or part of `npm test`'s fresh-clone contract.
+
+Run the migration preflight tests from this repository:
+
+```powershell
+$env:ROCUT_WORKTREE='<absolute Rocut source checkout>'
+node --test scripts/__tests__/probe-elftia-preflight.test.mjs scripts/__tests__/rocut-probe-source.test.mjs
+```
+
+Run continuous installed acceptance from an Elftia checkout with its existing
+dependencies and an explicitly owned E2E session. It edits that dedicated project:
+
+```powershell
+$env:ELFTIA_WORKTREE='<absolute Elftia worktree>'
+$env:ROCUT_WORKTREE='<absolute Rocut source checkout>'
+$env:ELFTIA_TEST_SESSION='<owned E2E session id>'
+$env:ELFTIA_CLI_DEBUG_PORT='9361'
+$env:ELFTIA_INSTALLED_ROCUT='<exact installed plugin root>'
+node node_modules/tsx/dist/cli.mjs '../elftia-plugin-rocut/scripts/probe-elftia-interactions.mjs' --linked-workflow-only
+```
+
+Use the actual plugin-repository path if it is not an adjacent checkout. Preserve
+earlier failed evidence and distinguish functional workflow from latency and
+resource-lifetime gates; one passing workflow is not full feature acceptance.
 
 ## Layout
 
