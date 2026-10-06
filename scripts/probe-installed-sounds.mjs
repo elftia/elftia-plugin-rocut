@@ -42,7 +42,7 @@ const hash = async () =>
   createHash("sha256")
     .update(await readFile(join(project, "project.json")))
     .digest("hex");
-const before = await hash();
+let before;
 let frame;
 const pageError = (error) =>
   evidence.errors.push(
@@ -84,7 +84,28 @@ try {
   );
   conn.page.on("pageerror", pageError);
   conn.page.on("request", request);
+  const beforeSetup = JSON.parse(
+    await readFile(join(project, "project.json"), "utf8"),
+  );
   await conn.page.setViewportSize({ width: 1280, height: 900 });
+  // Viewport setup can notify the timeline and queue the 800ms autosave.
+  // Establish the byte baseline after setup, never by ignoring later writes.
+  await conn.page.waitForTimeout(1800);
+  const afterSetup = JSON.parse(
+    await readFile(join(project, "project.json"), "utf8"),
+  );
+  const withoutSaveTimestamp = (value) => {
+    const copy = structuredClone(value);
+    delete copy.record.data.metadata.updatedAt;
+    delete copy.summary.updatedAt;
+    return copy;
+  };
+  assert.deepEqual(
+    withoutSaveTimestamp(afterSetup),
+    withoutSaveTimestamp(beforeSetup),
+    "Viewport setup must not alter project content",
+  );
+  before = await hash();
   await frame.getByLabel("Sounds", { exact: true }).click();
   const notice = frame
     .getByRole("status")
@@ -133,6 +154,7 @@ try {
     name: "Saved and Media navigation return to a usable Sounds panel",
     pass: true,
   });
+  await conn.page.waitForTimeout(1000);
   assert.equal(await hash(), before);
   assert.deepEqual(evidence.errors, []);
   evidence.checks.push({
