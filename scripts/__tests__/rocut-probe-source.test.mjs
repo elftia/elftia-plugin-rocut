@@ -47,7 +47,10 @@ test("every relocated driver's neutral helper and named exports still resolve", 
       /const \{([^}]+)\} = await loadRocutProbe\("(probe-[a-z0-9-]+\.mjs)"\)/g,
     )) {
       const names = helpers.get(match[2]) ?? new Set();
-      for (const binding of match[1].split(",")) names.add(binding.split(":")[0].trim());
+      for (const binding of match[1].split(",")) {
+        const name = binding.split(":")[0].trim();
+        if (name) names.add(name); // Formatted multiline destructuring may end with a comma.
+      }
       helpers.set(match[2], names);
     }
   }
