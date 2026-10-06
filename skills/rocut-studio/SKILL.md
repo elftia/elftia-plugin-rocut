@@ -147,7 +147,7 @@ Keep the Creator Studio session working directory as the project root. The rocut
 
 Write an operations JSON file, then apply it. General operation kinds:
 `create-track`,
-`update-track`, `delete-track`, `create-clip`, `update-clip`, `delete-clip`,
+`update-track`, `reorder-tracks`, `delete-track`, `create-clip`, `update-clip`, `delete-clip`,
 `create-asset`, `delete-asset`, `create-marker`, `update-marker`,
 `delete-marker`, `update-project`. The transaction contract also contains
 motion-text sequence operations, but agents must use the high-level
@@ -187,6 +187,23 @@ node $SKILL_DIR/../../vendor/run/rocut.mjs apply ops.json --target "$TARGET"
 - `idempotencyKey` deduplicates retries: the same key + same operations
   returns the original result; the same key + different operations rejects
   with `duplicate`.
+
+## Import actual local media
+
+Read [references/media-import.md](references/media-import.md) before bringing local
+audio, rendered shots or images into the project. Use `media import <spec.json>`;
+`create-asset` only registers metadata and does **not** accept a `filePath` or
+persist the media bytes. Import returns the real asset ID, not a timeline clip.
+
+## Native fine editing, scenes, captions and session history
+
+For transforms, ordinary text styling, keyframes/curves, effects, masks,
+graphics/stickers, audio automation, background/layer order, scenes, subtitle
+import, ASR or undo/redo, read [references/agent-editing.md](references/agent-editing.md).
+First check the installed runtime using `capabilities`, `editing catalog` and `task list`;
+these capabilities require the matching CLI, surface and WASM build. Missing
+capabilities are an explicit installation limitation, not permission to edit
+native project JSON or silently substitute UI automation.
 
 ## Motion text and JIZURA presets — use the Rust-owned commands
 
@@ -398,7 +415,8 @@ node "$CLI" draft approve --draft "$DRAFT" --target "$TARGET"   # or reject / di
 ```
 
 - `approve` applies the whole staged journal as one atomic commit (one
-  revision bump, one undo step).
+  revision bump). Its compensating undo plan is distinct from the pane's UI
+  history; do not promise that CLI commits appear in the pane's Undo menu.
 - `reject` is a judged refusal; `discard` means nobody judged it — the outcome
   carries `reason: "rejected" | "discarded" | "expired"` so you can tell the
   user whether retrying the same work makes sense.

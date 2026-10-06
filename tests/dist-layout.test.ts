@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import {
   ARTIFACT_MAPPING,
+  copyInventory,
   assertNoForbiddenBranding,
   BRANDING_LOGO_PATH,
   FORBIDDEN_BRAND_DIGESTS,
@@ -75,6 +76,10 @@ async function buildFakeTree(): Promise<string> {
   );
   await writeFile(path.join(root, "main/index.cjs"), MAIN_FIXTURE);
   await writeFile(path.join(root, "skills/rocut-studio/SKILL.md"), "# skill\n");
+  await mkdir(path.join(root, "skills/rocut-studio/references"), { recursive: true });
+  for (const name of ["agent-editing", "media-import"]) {
+    await writeFile(path.join(root, `skills/rocut-studio/references/${name}.md`), `# ${name}\n`);
+  }
   await writeFile(path.join(root, "vendor/LICENSE"), "MIT\n");
   await writeFile(path.join(root, "vendor/NOTICE.md"), "# notice\n");
   await writeFile(path.join(root, "vendor/PROVENANCE.md"), "# provenance\n");
@@ -108,12 +113,28 @@ describe("artifact mapping", () => {
       "elftia-plugin.json",
       "main/index.cjs",
       "skills/rocut-studio/SKILL.md",
+      "skills/rocut-studio/references/agent-editing.md",
+      "skills/rocut-studio/references/media-import.md",
       "vendor/LICENSE",
       "vendor/NOTICE.md",
       "vendor/PROVENANCE.md",
       "vendor/run",
       "vendor/surface",
     ]);
+  });
+
+  it("copies on-demand skill references and refuses an install tree missing one", async () => {
+    const source = await buildFakeTree();
+    const inventory = await inventoryRocutSources(source);
+    const installed = path.join(await scratch(), "installed");
+    await copyInventory(source, inventory, installed);
+    await validateRocutTree(installed, inventory);
+    for (const name of ["agent-editing", "media-import"]) {
+      const relative = `skills/rocut-studio/references/${name}.md`;
+      expect(await readFile(path.join(installed, relative), "utf8")).toBe(`# ${name}\n`);
+    }
+    await rm(path.join(installed, "skills/rocut-studio/references/media-import.md"));
+    await expect(validateRocutTree(installed)).rejects.toThrow("required runtime file missing");
   });
 
   it.runIf(realVendorAvailable)(
@@ -197,7 +218,7 @@ describe("install-tree validation fails closed", () => {
     const root = await buildFakeTree();
     const result = await validateRocutTree(root);
     expect(result.manifest.name).toBe("rocut");
-    expect(result.inventory.fileCount).toBe(12);
+    expect(result.inventory.fileCount).toBe(14);
   });
 
   it("rejects an extra root entry", async () => {
