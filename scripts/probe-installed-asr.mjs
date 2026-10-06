@@ -8,7 +8,8 @@ import { expect, loadRocutProbe } from "./rocut-probe-source.mjs";
 import { validateAsrResult } from "./probe-asr-result.mjs";
 
 // Explicit opt-in: real public model downloads, never paid ASR or user audio.
-assert.equal(process.env.ROCUT_ALLOW_LOCAL_ASR, "1");
+const durationOnly = process.env.ROCUT_ASR_DURATION_ONLY === "1";
+if (!durationOnly) assert.equal(process.env.ROCUT_ALLOW_LOCAL_ASR, "1");
 for (const key of [
   "ELFTIA_WORKTREE",
   "ELFTIA_TEST_SESSION",
@@ -62,7 +63,9 @@ const conn = await connect({
 });
 const previousViewport = conn.page.viewportSize();
 const evidence = {
-  kind: "installed-real-local-asr",
+  kind: durationOnly
+    ? "installed-durable-duration"
+    : "installed-real-local-asr",
   speech,
   checks: [],
   errors: [],
@@ -210,57 +213,87 @@ try {
   const sourceDuration = sourceAudio.startTime + sourceAudio.duration;
   assert(Number.isFinite(sourceDuration) && sourceDuration > 0);
   evidence.sourceDuration = sourceDuration;
-  // Durable transactions suppress redundant autosaves; the summary can lag until
-  // an explicit flush. Bound ASR output by the independently persisted audio,
-  // not by that derived summary. Record the lag rather than hiding it.
   evidence.metadataDurationBeforeRecognition = (
     await record()
   ).data.metadata.duration;
-  await editor.getByLabel("Captions", { exact: true }).click();
-  await expect(
-    editor.getByRole("combobox").filter({ hasText: /^Auto detect$/ }),
-  ).toHaveCount(1);
-  const started = Date.now();
-  await editor
-    .getByRole("button", { name: "Generate transcript", exact: true })
-    .click();
-  console.log(
-    JSON.stringify({ work, phase: "real default-model inference started" }),
+  assert.equal(
+    evidence.metadataDurationBeforeRecognition,
+    sourceDuration,
+    "The audio transaction itself must persist its summary duration",
   );
-  let lastPhase = "";
-  while ((await captions()).length === 0) {
-    assert(
-      Date.now() - started < 900000,
-      "Real ASR exceeded the 15-minute limit",
-    );
-    const alert = editor.getByRole("alert");
-    if (await alert.count()) throw new Error(await alert.innerText());
-    const busy = editor.locator('button[aria-busy="true"]');
-    const phase = (await busy.count()) ? await busy.innerText() : "idle";
-    if (phase !== lastPhase) {
-      console.log("ASR: " + phase);
-      lastPhase = phase;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
-  evidence.elapsedMs = Date.now() - started;
-  const result = await captions();
-  evidence.metadataDurationAtRecognition = (
-    await record()
-  ).data.metadata.duration;
-  evidence.captions = validateAsrResult({ elements: result, sourceDuration });
+  await conn.page.keyboard.press("Control+z");
+  await expect
+    .poll(async () => (await record()).data.metadata.duration)
+    .toBe(0);
+  await conn.page.keyboard.press("Control+Shift+z");
+  await expect
+    .poll(async () => (await record()).data.metadata.duration)
+    .toBe(sourceDuration);
   evidence.checks.push({
-    name: "Real default ASR recognizes generated speech with bounded timestamps",
+    name: "Audio insertion and Undo/Redo durably update summary without close or flush",
     pass: true,
   });
-  await conn.page.keyboard.press("Control+z");
-  await expect.poll(async () => (await captions()).length).toBe(0);
-  await conn.page.keyboard.press("Control+Shift+z");
-  await expect.poll(captions).toEqual(result);
-  await reloadEditorFrame(editor);
-  assert.deepEqual(await captions(), result);
+  if (!durationOnly) {
+    await editor.getByLabel("Captions", { exact: true }).click();
+    await expect(
+      editor.getByRole("combobox").filter({ hasText: /^Auto detect$/ }),
+    ).toHaveCount(1);
+    const started = Date.now();
+    await editor
+      .getByRole("button", { name: "Generate transcript", exact: true })
+      .click();
+    console.log(
+      JSON.stringify({ work, phase: "real default-model inference started" }),
+    );
+    let lastPhase = "";
+    while ((await captions()).length === 0) {
+      assert(
+        Date.now() - started < 900000,
+        "Real ASR exceeded the 15-minute limit",
+      );
+      const alert = editor.getByRole("alert");
+      if (await alert.count()) throw new Error(await alert.innerText());
+      const busy = editor.locator('button[aria-busy="true"]');
+      const phase = (await busy.count()) ? await busy.innerText() : "idle";
+      if (phase !== lastPhase) {
+        console.log("ASR: " + phase);
+        lastPhase = phase;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    evidence.elapsedMs = Date.now() - started;
+    const result = await captions();
+    evidence.metadataDurationAtRecognition = (
+      await record()
+    ).data.metadata.duration;
+    evidence.captions = validateAsrResult({ elements: result, sourceDuration });
+    evidence.checks.push({
+      name: "Real default ASR recognizes generated speech with bounded timestamps",
+      pass: true,
+    });
+    await conn.page.keyboard.press("Control+z");
+    await expect.poll(async () => (await captions()).length).toBe(0);
+    await conn.page.keyboard.press("Control+Shift+z");
+    await expect.poll(captions).toEqual(result);
+    await reloadEditorFrame(editor);
+    assert.deepEqual(await captions(), result);
+    evidence.checks.push({
+      name: "Recognized captions survive Undo/Redo and editor reload",
+      pass: true,
+    });
+  } else {
+    assert.deepEqual(evidence.modelRequests, []);
+    await reloadEditorFrame(editor);
+  }
+  assert.equal((await record()).data.metadata.duration, sourceDuration);
+  assert.deepEqual(
+    (await record()).data.scenes.flatMap((scene) =>
+      scene.tracks.audio.flatMap((track) => track.elements),
+    ),
+    [sourceAudio],
+  );
   evidence.checks.push({
-    name: "Recognized captions survive Undo/Redo and editor reload",
+    name: "Reopened source audio and summary match exactly",
     pass: true,
   });
   assert.deepEqual(evidence.errors, []);
