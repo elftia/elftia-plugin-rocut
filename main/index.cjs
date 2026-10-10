@@ -94,6 +94,8 @@ function createDescriptor(options = {}) {
 
   return {
     toolId: TOOL_ID,
+    htmlFrameCapture: 'v1',
+    htmlFrameCaptureCapabilities: ['particle-surface-session-v2'],
     displayName: 'rocut video editor',
     projectsDirName: 'rocut',
     project: {

@@ -14,6 +14,10 @@ and automatic in-place migration of older-schema project directories. The
 0.4.2 surface opens directly in the editor without the old multi-step welcome
 onboarding.
 
+Future opt-in capabilities, including online Sounds, are tracked separately in [optional enhancements](docs/optional-enhancements.md). These candidates are not automatically part of the current repair scope.
+
+For the comparison with `vocaloid-style-mv-pipeline`, see the [MV capability and gap audit](docs/vocaloid-mv-capability-audit.md). It separates native editing, external production tools and unverified workflows, with alternatives for a scoped E2E or targeted gap-filling.
+
 ## Current 0.5.0 candidate
 
 - Runtime pin **`1b2d8208`** fixes stale project-summary duration in the same durable transaction, without a second autosave or changed ownership. Two deterministic regressions fail before/pass after; 71 related source tests (2,074 assertions), scoped lint/typecheck/build, 52 producer tests and deterministic double-pack/vendor/dist checks pass. Real installed `installed-asr-WZiJyc` passes **2/2**, zero errors/model requests: audio insertion, Undo/Redo and reload keep exact audio content and summary duration synchronized. Run the ASR driver with `ROCUT_ASR_DURATION_ONLY=1` for this no-model mode; full inference still requires explicit download opt-in. Independent backup and 356-file installation parity are verified. This is focused candidate acceptance, not a rerun of all older aggregate/performance evidence.
@@ -196,6 +200,28 @@ earlier failed evidence and distinguish functional workflow from latency and
 resource-lifetime gates; one passing workflow is not full feature acceptance.
 
 ## Layout
+
+### Electron HTML frame capture (development source)
+
+The main descriptor opts into Host API 1.73's optional `htmlFrameCapture: 'v1'`.
+Updated Elftia injects `ELFTIA_HTML_FRAME_CONNECTION_FILE` into the launched
+daemon. Updated Rocut reads this private file per frame and prefers Elftia's
+built-in Electron/Chromium; no extra browser configuration is needed. The file
+and its credentials must never enter a project, renderer payload or log.
+Standalone CLI can still use `ROCUT_HTML_BROWSER_PATH`; a configured Electron
+connection failure does not silently fall back to an external browser.
+
+Only HTML rasterization uses this service. Rocut's compositor, audio pipeline
+and video encoder remain unchanged and browser-based. Desktop exit cancels
+captures, not the daemon; reopening refreshes discovery at the stable path.
+Disabling the plugin revokes its grant. Older hosts continue to run the editor
+without this optional capture service.
+
+This is not a vendor/dist/installed-plugin update. Deploy matching host and
+Rocut runtime builds before claiming installed acceptance. See the Rocut source
+`docs/programmatic-frame-sources.md` for protocol and isolated test commands.
+
+### Repository paths
 
 | Path                           | What it is                                                                                               |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------- |

@@ -23,6 +23,8 @@ describe("rocut main extension", () => {
     const descriptor = register.mock.calls[0][0];
     expect(descriptor).toMatchObject({
       toolId: "rocut",
+      htmlFrameCapture: "v1",
+      htmlFrameCaptureCapabilities: ["particle-surface-session-v2"],
       displayName: "rocut video editor",
       projectsDirName: "rocut",
       healthPath: "/health",
