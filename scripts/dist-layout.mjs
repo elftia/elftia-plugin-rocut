@@ -17,17 +17,17 @@ import {
   realpath,
 } from "node:fs/promises";
 import path from "node:path";
+import {
+  RUN_FILE_PATTERN,
+  assertRuntimeSidecarClosure,
+} from "./runtime-sidecars.mjs";
 
 export const PLUGIN_ID = "rocut";
-
-/** Flat file names allowed inside `vendor/run/` — the bundled CLI closure. */
-const RUN_FILE_PATTERN =
-  /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/;
 
 /**
  * The artifact mapping. `kind: "tree"` copies a directory recursively; an
  * optional `filePattern` restricts the flat file names it accepts and rejects
- * any nesting, which is what keeps `vendor/run/` to the three known outputs.
+ * any nesting, which keeps `vendor/run/` to known entry/chunk/WASM and sidecars.
  */
 export const ARTIFACT_MAPPING = Object.freeze([
   { kind: "file", source: "elftia-plugin.json" },
@@ -299,6 +299,7 @@ export async function inventoryRocutSources(repoRootInput) {
       });
     }
   }
+  await assertRuntimeSidecarClosure(path.join(repoRoot, "vendor/run"));
   entries.sort(compareEntries);
   const seen = new Set();
   for (const entry of entries) {
@@ -446,6 +447,7 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     `producer tooling is forbidden in dist: ${toolingEntry?.path}`,
   );
   assertNoForbiddenBranding(inventory);
+  await assertRuntimeSidecarClosure(path.join(treeRoot, "vendor/run"));
 
   if (expectedInventory !== null) {
     assert(

@@ -166,7 +166,7 @@ describe("artifact mapping", () => {
   );
 
   it.runIf(realVendorAvailable)(
-    "keeps vendor/run flat and limited to the three known shapes",
+    "keeps vendor/run flat and limited to the known runtime outputs",
     async () => {
       const inventory = await inventoryRocutSources(repoRoot);
       const run = inventory.entries
@@ -176,7 +176,7 @@ describe("artifact mapping", () => {
       for (const name of run) {
         expect(name).not.toContain("/");
         expect(name).toMatch(
-          /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/,
+          /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm|particle-sampler-(wasm|worker-entry)\.mjs|liquid-object-(wasm|worker-entry)\.mjs)$/,
         );
       }
       expect(run).toContain("rocut.mjs");
@@ -220,6 +220,45 @@ describe("install-tree validation fails closed", () => {
     expect(result.manifest.name).toBe("rocut");
     expect(result.inventory.fileCount).toBe(14);
   });
+
+  it("ships fixed Particle and Liquid sidecars unchanged through the artifact mapping", async () => {
+    const root = await buildFakeTree();
+    const sidecars = [
+      "particle-sampler-wasm.mjs",
+      "particle-sampler-worker-entry.mjs",
+      "liquid-object-wasm.mjs",
+      "liquid-object-worker-entry.mjs",
+    ];
+    for (const name of sidecars)
+      await writeFile(path.join(root, "vendor/run", name), `// ${name}\nexport {};\n`);
+    const inventory = await inventoryRocutSources(root);
+    const staged = path.join(await scratch(), "staged");
+    await copyInventory(root, inventory, staged);
+    const result = await validateRocutTree(staged, inventory);
+    expect(result.inventory.fileCount).toBe(18);
+    for (const name of sidecars) {
+      expect(await readFile(path.join(staged, "vendor/run", name))).toEqual(
+        await readFile(path.join(root, "vendor/run", name)),
+      );
+    }
+  });
+
+  it.each(["particle-sampler-wasm.mjs", "liquid-object-wasm.mjs"])(
+    "rejects a referenced but missing sidecar pair: %s",
+    async (name) => {
+      const root = await buildFakeTree();
+      await writeFile(
+        path.join(root, "vendor/run/chunk-AAAAAAAA.js"),
+        `export const workerModule = './${name}';\n`,
+      );
+      await expect(inventoryRocutSources(root)).rejects.toThrow(
+        `Required runtime sidecar missing: ${name}`,
+      );
+      await expect(validateRocutTree(root)).rejects.toThrow(
+        `Required runtime sidecar missing: ${name}`,
+      );
+    },
+  );
 
   it("rejects an extra root entry", async () => {
     const root = await buildFakeTree();

@@ -47,6 +47,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { FORBIDDEN_BRAND_DIGESTS, sha256 } from "./dist-layout.mjs";
 import { inventoryVendorTree, renderProvenance } from "./provenance.mjs";
+import {
+  RUN_FILE_PATTERN,
+  assertRuntimeSidecarClosure,
+} from "./runtime-sidecars.mjs";
 
 const pluginRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -54,8 +58,6 @@ const pluginRoot = path.resolve(
 );
 
 const UPSTREAM_REPOSITORY = "https://github.com/DumoeDss/rocut";
-const RUN_FILE_PATTERN =
-  /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/;
 /** The one branding path the editor header resolves at run time. */
 const BRANDING_LOGO_RELATIVE = "logos/opencut/svg/logo.svg";
 
@@ -528,13 +530,13 @@ export async function vendorRocut(options = {}) {
     );
   }
 
+  await assertRuntimeSidecarClosure(packOut);
   await rm(vendorRoot, { recursive: true, force: true });
   await mkdir(vendorRoot, { recursive: true });
 
   // vendor/run — the bundled CLI closure. Flat by construction: the pack output
   // root holds the entry, its chunks, the wasm sibling and its own PROVENANCE;
-  // only the first three are runtime bytes, and the wasm must stay a sibling of
-  // the chunk that imports it, so the flat shape is load-bearing.
+  // the fixed worker sidecars and WASM stay siblings of their importing chunk.
   const runRoot = path.join(vendorRoot, "run");
   await mkdir(runRoot, { recursive: true });
   const runFiles = [];
