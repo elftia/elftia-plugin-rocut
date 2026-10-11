@@ -65,8 +65,8 @@ async function buildFakeTree(): Promise<string> {
           entry: "index.cjs",
           checksum: sha512Text(MAIN_FIXTURE),
           requiredMajor: 1,
-          requiredMinor: 51,
-          builtAgainst: "1.54.0",
+          requiredMinor: 75,
+          builtAgainst: "1.75.0",
         },
         agent: {
           skills: [{ id: "rocut-studio", path: "./skills/rocut-studio" }],
@@ -219,6 +219,31 @@ describe("install-tree validation fails closed", () => {
     const result = await validateRocutTree(root);
     expect(result.manifest.name).toBe("rocut");
     expect(result.inventory.fileCount).toBe(14);
+  });
+
+  it("accepts the actual committed producer manifest and main checksum", async () => {
+    const root = await buildFakeTree();
+    await writeFile(
+      path.join(root, "elftia-plugin.json"),
+      await readFile(path.join(repoRoot, "elftia-plugin.json")),
+    );
+    await writeFile(
+      path.join(root, "main/index.cjs"),
+      await readFile(path.join(repoRoot, "main/index.cjs")),
+    );
+    const result = await validateRocutTree(root);
+    expect(result.manifest.contributes.main.requiredMinor).toBe(75);
+    expect(result.manifest.contributes.main.builtAgainst).toBe("1.75.0");
+  });
+
+  it("rejects the obsolete Host API 1.51 requirement", async () => {
+    const root = await buildFakeTree();
+    const manifest = JSON.parse(
+      await readFile(path.join(root, "elftia-plugin.json"), "utf8"),
+    );
+    manifest.contributes.main.requiredMinor = 51;
+    await writeFile(path.join(root, "elftia-plugin.json"), JSON.stringify(manifest));
+    await expect(validateRocutTree(root)).rejects.toThrow("requiredMinor must be 75");
   });
 
   it("ships fixed Particle and Liquid sidecars unchanged through the artifact mapping", async () => {

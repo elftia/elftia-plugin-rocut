@@ -392,7 +392,7 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     "manifest main checksum must match main/index.cjs",
   );
   assert(main?.requiredMajor === 1, "manifest main requiredMajor must be 1");
-  assert(main?.requiredMinor === 51, "manifest main requiredMinor must be 51");
+  assert(main?.requiredMinor === 75, "manifest main requiredMinor must be 75");
   assert(
     typeof main?.builtAgainst === "string" && main.builtAgainst.length > 0,
     "manifest main builtAgainst missing",

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { lstat, readdir, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
+import ts from "typescript";
 
 // Fixed producer outputs, not a wildcard permission to ship arbitrary workers.
 export const RUN_FILE_PATTERN =
@@ -13,6 +14,42 @@ export const RUNTIME_SIDECAR_GROUPS = Object.freeze([
   ]),
   Object.freeze(["liquid-object-wasm.mjs", "liquid-object-worker-entry.mjs"]),
 ]);
+
+// Inspect decoded JS literals, not raw substring matches. This covers the
+// fixed paths emitted by our producer; it does not evaluate arbitrary JS.
+function literalSidecarReferences(source, fileName) {
+  const parsed = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.JS,
+  );
+  assert(
+    parsed.parseDiagnostics.length === 0,
+    `Invalid runtime JavaScript: ${fileName}`,
+  );
+  const references = new Set();
+  const sidecars = RUNTIME_SIDECAR_GROUPS.flat();
+  function visit(node) {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+      const value = node.text;
+      const basename = path.posix.basename(
+        value.replaceAll("\\", "/").split(/[?#]/)[0],
+      );
+      if (sidecars.includes(basename)) {
+        assert(
+          value === basename || value === `./${basename}`,
+          `Runtime sidecar reference must be a flat sibling: ${value}`,
+        );
+        references.add(basename);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(parsed);
+  return references;
+}
 
 /** Older pins have no sidecars. A reference in any entry/chunk, or one present
  * member, requires the whole corresponding pair before staging or shipping.
@@ -33,23 +70,20 @@ export async function assertRuntimeSidecarClosure(directory) {
     ({ name }) => RUN_FILE_PATTERN.test(name),
   );
   const names = new Set();
-  const sources = [];
+  const references = new Set();
   for (const file of files) {
     assert(file.isFile(), `Runtime closure file must be regular: ${file.name}`);
     names.add(file.name);
     if (/\.(?:js|mjs)$/.test(file.name)) {
-      sources.push(
-        new TextDecoder("utf-8", { fatal: true }).decode(
-          await readFile(path.join(root, file.name)),
-        ),
+      const source = new TextDecoder("utf-8", { fatal: true }).decode(
+        await readFile(path.join(root, file.name)),
       );
+      for (const name of literalSidecarReferences(source, file.name))
+        references.add(name);
     }
   }
   const required = RUNTIME_SIDECAR_GROUPS.filter((group) =>
-    group.some(
-      (name) =>
-        names.has(name) || sources.some((source) => source.includes(name)),
-    ),
+    group.some((name) => names.has(name) || references.has(name)),
   );
   for (const group of required) {
     for (const name of group)
