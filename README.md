@@ -3,7 +3,11 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Status: **0.5.0 — native motion text and JIZURA presets**. The plugin ships the built rocut runtime,
+Producer version: **0.6.4 — isolated acceptance candidate**. The final runtime source pin,
+vendor payload, epkg and isolated installed Electron E2E are still pending; the version
+update alone is not release approval. The retained 0.5.0 artifacts below are historical.
+
+The **0.5.0 native motion text and JIZURA baseline** ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's
 managed Node 20+. No rocut checkout, no bun, no global install, and no
 experimental Node flags. Capabilities: `host ensure`/`host start` →
@@ -18,7 +22,7 @@ Future opt-in capabilities, including online Sounds, are tracked separately in [
 
 For the comparison with `vocaloid-style-mv-pipeline`, see the [MV capability and gap audit](docs/vocaloid-mv-capability-audit.md). It separates native editing, external production tools and unverified workflows, with alternatives for a scoped E2E or targeted gap-filling.
 
-## Current 0.5.0 candidate
+## Retained 0.5.0 candidate
 
 - Runtime pin **`1b2d8208`** fixes stale project-summary duration in the same durable transaction, without a second autosave or changed ownership. Two deterministic regressions fail before/pass after; 71 related source tests (2,074 assertions), scoped lint/typecheck/build, 52 producer tests and deterministic double-pack/vendor/dist checks pass. Real installed `installed-asr-WZiJyc` passes **2/2**, zero errors/model requests: audio insertion, Undo/Redo and reload keep exact audio content and summary duration synchronized. Run the ASR driver with `ROCUT_ASR_DURATION_ONLY=1` for this no-model mode; full inference still requires explicit download opt-in. Independent backup and 356-file installation parity are verified. This is focused candidate acceptance, not a rerun of all older aggregate/performance evidence.
 - Installable artifact: `release/local-1b2d8208/rocut.epkg` (**86,160,162 bytes / 356 files**), SHA-256 `0ea48a4e816333fb848e5dea2d72da7952639c33d4f8e7f9773df01c4b7134b6`. Plugin remains 0.5.0; no public tag/release or Elftia-main commit. Earlier artifacts and failed evidence remain preserved.
