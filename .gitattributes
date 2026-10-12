@@ -1,0 +1,2 @@
+# The distributed code entry must match Host/SDK LF-law metadata on checkout.
+main/index.cjs text eol=lf
