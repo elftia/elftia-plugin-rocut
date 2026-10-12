@@ -123,6 +123,28 @@ npm run release       # dist/rocut/ -> release/<version>/rocut.epkg + rocut.json
 command when `vendor/` is missing or incomplete — you will never get a bare
 ENOENT from inside a copy loop.
 
+### Isolated pinned builds
+
+To leave the repository's existing `vendor/` and installed plugins untouched,
+use a fresh absolute output directory with the normal pinned vendor entry:
+
+```bash
+npm run vendor -- --rocut <pinned-checkout> --output-root <fresh-absolute-directory> --surface-dir <absolute-prebuilt-surface> --wasm-package-dir <absolute-wasm-package>
+```
+
+The result is `<output-root>/vendor/`, with its work tree and provenance under
+the same owned root. This command does not install a plugin or publish a new
+package, and `npm run build` without options still reads the repository's
+default `vendor/`. The checkout must match `upstream.json`; tracked changes
+remain rejected by default. Explicit inputs are read-only. An existing,
+redirected, overlapping or concurrently created output root is rejected, as
+is `--skip-pack` in isolated mode. The parent directory must already exist.
+
+Record the working directory, selected input paths and tool versions when
+comparing builds: esbuild source-path comments and their chunk hashes can
+differ across working directories. The packer's same-input determinism check
+does not imply byte identity with an earlier selected-artifact package.
+
 `npm test` is safe in a fresh clone: all 47 producer/source tests run without a
 generated `vendor/` tree. When `vendor/PROVENANCE.md` exists, five additional
 integration assertions automatically verify the real artifact mapping,

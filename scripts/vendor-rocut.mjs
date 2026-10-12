@@ -23,6 +23,11 @@
  *
  *   node scripts/vendor-rocut.mjs [--rocut <path>] [--skip-pack]
  *                                 [--allow-modified-tracked]
+ *                                 [--output-root <fresh-absolute-directory>]
+ *                                 [--surface-dir <directory>] [--wasm-package-dir <directory>]
+ *
+ * An explicit output root keeps work and vendor trees under that fresh root,
+ * rejects --skip-pack, and protects inputs and installed trees from writes.
  *
  * The upstream checkout comes from `--rocut`, else `$ROCUT_REPO`, else the
  * documented default `../../_others/rocut`; an absent checkout names all three.
@@ -37,16 +42,21 @@ import {
   mkdir,
   readdir,
   readFile,
-  rm,
   writeFile,
 } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { FORBIDDEN_BRAND_DIGESTS, RUN_FILE_PATTERN, sha256 } from "./dist-layout.mjs";
+import {
+  FORBIDDEN_BRAND_DIGESTS,
+  RUN_FILE_PATTERN,
+  sha256,
+} from "./dist-layout.mjs";
 import { inventoryVendorTree, renderProvenance } from "./provenance.mjs";
+import { prepareVendorPaths } from "./vendor-paths.mjs";
 
 const pluginRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -165,6 +175,7 @@ function toolVersion(command, args) {
 }
 
 async function copyTree(sourceRoot, destinationRoot, options = {}) {
+  const io = options.io ?? { mkdir, copyFile };
   const copied = [];
   const walk = async (relative) => {
     const absoluteSource = path.join(sourceRoot, relative);
@@ -193,12 +204,12 @@ async function copyTree(sourceRoot, destinationRoot, options = {}) {
       if (options.skip?.(childRelative)) continue;
       const from = path.join(sourceRoot, ...childRelative.split("/"));
       const to = path.join(destinationRoot, ...childRelative.split("/"));
-      await mkdir(path.dirname(to), { recursive: true });
-      await copyFile(from, to);
+      await io.mkdir(path.dirname(to), { recursive: true });
+      await io.copyFile(from, to);
       copied.push(childRelative);
     }
   };
-  await mkdir(destinationRoot, { recursive: true });
+  await io.mkdir(destinationRoot, { recursive: true });
   await walk("");
   return copied;
 }
@@ -376,7 +387,11 @@ export function assertMotionTextFontNotice(manifest, noticeText) {
  * actually ship. Leaving it verbatim would have it claim eight branding files
  * that were deliberately removed — an inventory that lies is worse than none.
  */
-export async function rewriteAssetManifest(surfaceRoot, placeholderBytes) {
+export async function rewriteAssetManifest(
+  surfaceRoot,
+  placeholderBytes,
+  io = { writeFile },
+) {
   const manifestPath = path.join(surfaceRoot, "asset-manifest.json");
   const original = await readFile(manifestPath, "utf8");
   const manifest = JSON.parse(original);
@@ -410,7 +425,7 @@ export async function rewriteAssetManifest(surfaceRoot, placeholderBytes) {
     removed: dropped.map((file) => ({ path: file.path, sha256: file.sha256 })),
   };
   await validateSurfaceAssetManifest(surfaceRoot, manifest);
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await io.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   return {
     original: sha256(Buffer.from(original, "utf8")),
     rewritten: sha256(
@@ -427,10 +442,8 @@ export async function vendorRocut(options = {}) {
     options.rocutRoot,
     pin,
   );
-  const workRoot = path.join(pluginRoot, ".elftia-work");
-  const packOut = path.join(workRoot, "dist-runtime");
-  const packManifest = path.join(workRoot, "runtime-bundle-manifest.json");
-  const vendorRoot = path.join(pluginRoot, "vendor");
+  const io = prepareVendorPaths(options, pluginRoot, upstreamRoot);
+  const { workRoot, packOut, packManifest, vendorRoot } = io;
   const log = options.log ?? ((line) => console.info(line));
 
   const head = git(upstreamRoot, ["rev-parse", "HEAD"]).trim();
@@ -493,8 +506,8 @@ export async function vendorRocut(options = {}) {
   }
 
   if (options.skipPack !== true) {
-    await rm(packOut, { recursive: true, force: true });
-    await mkdir(workRoot, { recursive: true });
+    await io.rm(packOut, { recursive: true, force: true });
+    await io.mkdir(workRoot, { recursive: true });
     const packArgs = [
       path.join(upstreamRoot, "script", "pack-runtime.mjs"),
       "--out",
@@ -503,13 +516,19 @@ export async function vendorRocut(options = {}) {
       packManifest,
       "--skip-smoke",
     ];
+    if (options.surfaceDirectory !== undefined)
+      packArgs.push("--surface-dir", options.surfaceDirectory);
+    if (options.wasmPackageDirectory !== undefined)
+      packArgs.push("--wasm-package-dir", options.wasmPackageDirectory);
     if (tree.rows.length > 0) packArgs.push("--allow-dirty");
     log(`vendor: node ${packArgs.map((a) => path.basename(a)).join(" ")}`);
+    io.assert(packOut);
     const pack = spawnSync(process.execPath, packArgs, {
       cwd: upstreamRoot,
       encoding: "utf8",
       maxBuffer: 256 * 1024 * 1024,
     });
+    io.assert(packOut);
     const packOutput = `${pack.stdout || ""}${pack.stderr || ""}`.trim();
     log(packOutput);
     log(`REAL_EXIT_CODE[pack-runtime]:${pack.status}`);
@@ -526,19 +545,19 @@ export async function vendorRocut(options = {}) {
     );
   }
 
-  await rm(vendorRoot, { recursive: true, force: true });
-  await mkdir(vendorRoot, { recursive: true });
+  await io.rm(vendorRoot, { recursive: true, force: true });
+  await io.mkdir(vendorRoot, { recursive: true });
 
   // vendor/run — the bundled CLI closure. Flat by construction: the pack output
   // root holds the entry, its chunks, the wasm sibling and its own PROVENANCE;
   // only the first three are runtime bytes, and the wasm must stay a sibling of
   // the chunk that imports it, so the flat shape is load-bearing.
   const runRoot = path.join(vendorRoot, "run");
-  await mkdir(runRoot, { recursive: true });
+  await io.mkdir(runRoot, { recursive: true });
   const runFiles = [];
   for (const child of await readdir(packOut, { withFileTypes: true })) {
     if (!child.isFile() || !RUN_FILE_PATTERN.test(child.name)) continue;
-    await copyFile(
+    await io.copyFile(
       path.join(packOut, child.name),
       path.join(runRoot, child.name),
     );
@@ -560,6 +579,7 @@ export async function vendorRocut(options = {}) {
   const removals = [];
   const surfaceSource = path.join(packOut, "surface");
   await copyTree(surfaceSource, path.join(vendorRoot, "surface"), {
+    io,
     skip: (relative) => {
       if (!relative.startsWith("logos/")) return false;
       removals.push(relative);
@@ -591,8 +611,8 @@ export async function vendorRocut(options = {}) {
     surfaceRoot,
     ...BRANDING_LOGO_RELATIVE.split("/"),
   );
-  await mkdir(path.dirname(placeholderTarget), { recursive: true });
-  await writeFile(placeholderTarget, placeholderBytes);
+  await io.mkdir(path.dirname(placeholderTarget), { recursive: true });
+  await io.writeFile(placeholderTarget, placeholderBytes);
   const upstreamLogo = removalRecords.find(
     (item) => item.path === `surface/${BRANDING_LOGO_RELATIVE}`,
   );
@@ -613,6 +633,7 @@ export async function vendorRocut(options = {}) {
   const manifestRewrite = await rewriteAssetManifest(
     surfaceRoot,
     placeholderBytes,
+    io,
   );
   const noticeSource = path.join(pluginRoot, "licenses", "NOTICE.md");
   const noticeText = await readFile(noticeSource, "utf8");
@@ -646,11 +667,11 @@ export async function vendorRocut(options = {}) {
   );
 
   // Licence + notice.
-  await copyFile(
+  await io.copyFile(
     path.join(upstreamRoot, "LICENSE"),
     path.join(vendorRoot, "LICENSE"),
   );
-  await copyFile(noticeSource, path.join(vendorRoot, "NOTICE.md"));
+  await io.copyFile(noticeSource, path.join(vendorRoot, "NOTICE.md"));
 
   const entries = await inventoryVendorTree(vendorRoot);
   const facts = {
@@ -660,7 +681,9 @@ export async function vendorRocut(options = {}) {
     nodeVersion: process.version,
     esbuildVersion: JSON.parse(
       await readFile(
-        path.join(upstreamRoot, "node_modules", "esbuild", "package.json"),
+        createRequire(
+          path.join(upstreamRoot, "script", "pack-runtime.mjs"),
+        ).resolve("esbuild/package.json"),
         "utf8",
       ),
     ).version,
@@ -674,7 +697,7 @@ export async function vendorRocut(options = {}) {
     removals: removalRecords,
     entries,
   };
-  await writeFile(
+  await io.writeFile(
     path.join(vendorRoot, "PROVENANCE.md"),
     renderProvenance(facts),
   );
@@ -690,11 +713,17 @@ if (invokedPath === import.meta.url) {
   const argv = process.argv.slice(2);
   const flag = (name) => {
     const index = argv.indexOf(`--${name}`);
-    return index >= 0 ? argv[index + 1] : undefined;
+    if (index < 0) return undefined;
+    if (!argv[index + 1] || argv[index + 1].startsWith("--"))
+      fail(`--${name} requires a value`);
+    return argv[index + 1];
   };
   try {
     await vendorRocut({
       rocutRoot: flag("rocut"),
+      outputRoot: flag("output-root"),
+      surfaceDirectory: flag("surface-dir"),
+      wasmPackageDirectory: flag("wasm-package-dir"),
       skipPack: argv.includes("--skip-pack"),
       allowModifiedTracked: argv.includes("--allow-modified-tracked"),
     });
