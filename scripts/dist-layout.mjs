@@ -17,12 +17,21 @@ import {
   realpath,
 } from "node:fs/promises";
 import path from "node:path";
+import { validateToolchainClosure } from "./toolchain-closure.mjs";
 
 export const PLUGIN_ID = "rocut";
+export const MAX_PLUGIN_EXPANDED_BYTES = 268435456;
+export function assertRocutPackageBudget(inventory) {
+  assert(inventory.entries.length <= 4096, "plugin tree exceeds official 4096 archive entries");
+  assert(inventory.entries.every(e => Number.isSafeInteger(e.size) && e.size >= 0), "invalid plugin inventory byte count");
+  const expandedBytes = inventory.entries.reduce((n, e) => n + e.size, 0);
+  assert(Number.isSafeInteger(expandedBytes) && expandedBytes <= MAX_PLUGIN_EXPANDED_BYTES, `plugin declared expanded bytes ${expandedBytes} exceed Core ${MAX_PLUGIN_EXPANDED_BYTES} limit`);
+  return { fileCount: inventory.entries.length, expandedBytes, expandedByteLimit: MAX_PLUGIN_EXPANDED_BYTES, headroomBytes: MAX_PLUGIN_EXPANDED_BYTES - expandedBytes };
+}
 
 /** Flat file names allowed inside `vendor/run/` — the bundled CLI closure. */
-const RUN_FILE_PATTERN =
-  /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/;
+export const RUN_FILE_PATTERN =
+  /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm|(?:liquid-object|particle-sampler)-(?:wasm|worker-entry)\.mjs)$/;
 
 /**
  * The artifact mapping. `kind: "tree"` copies a directory recursively; an
@@ -40,6 +49,7 @@ export const ARTIFACT_MAPPING = Object.freeze([
   { kind: "file", source: "vendor/PROVENANCE.md" },
   { kind: "tree", source: "vendor/run", filePattern: RUN_FILE_PATTERN },
   { kind: "tree", source: "vendor/surface" },
+  { kind: "tree", source: "prebuilds/win32-x64/toolchain", optional: true },
 ]);
 
 export const RUNTIME_ROOT_ENTRIES = Object.freeze([
@@ -258,6 +268,7 @@ export async function inventoryRocutSources(repoRootInput) {
       state = await lstat(sourcePath);
     } catch (error) {
       if (error?.code === "ENOENT") {
+        if (rule.optional) continue;
         throw new Error(
           `artifact source is missing: ${rule.source} — run \`npm run vendor\` first`,
         );
@@ -365,9 +376,10 @@ export function assertNoForbiddenBranding(inventory) {
 
 export async function validateRocutTree(treeRoot, expectedInventory = null) {
   const rootNames = (await readdir(treeRoot)).sort();
+  const hasPrebuilds = rootNames.includes("prebuilds");
   assert(
     JSON.stringify(rootNames) ===
-      JSON.stringify([...RUNTIME_ROOT_ENTRIES].sort()),
+      JSON.stringify([...RUNTIME_ROOT_ENTRIES, ...(hasPrebuilds ? ["prebuilds"] : [])].sort()),
     `install tree root must contain exactly ${RUNTIME_ROOT_ENTRIES.join(", ")} — found ${rootNames.join(", ")}`,
   );
 
@@ -391,7 +403,7 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     "manifest main checksum must match main/index.cjs",
   );
   assert(main?.requiredMajor === 1, "manifest main requiredMajor must be 1");
-  assert(main?.requiredMinor === 51, "manifest main requiredMinor must be 51");
+  assert(main?.requiredMinor === 77, "manifest main requiredMinor must be 77");
   assert(
     typeof main?.builtAgainst === "string" && main.builtAgainst.length > 0,
     "manifest main builtAgainst missing",
@@ -430,8 +442,16 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     chunkCount >= 1,
     "vendor/run must carry at least one esbuild chunk (the migration chunk holds the wasm import)",
   );
+  assertRocutPackageBudget(inventory);
+  if (hasPrebuilds) {
+    assert(JSON.stringify(manifest.supportedPlatforms) === JSON.stringify(["win32-x64"]), "local candidate supportedPlatforms must be win32-x64");
+    assert(JSON.stringify((await readdir(path.join(treeRoot, "prebuilds"))).sort()) === JSON.stringify(["win32-x64"]), "prebuild targets must match supportedPlatforms");
+    assert(JSON.stringify(await readdir(path.join(treeRoot, "prebuilds/win32-x64"))) === JSON.stringify(["toolchain"]), "prebuild target must contain only toolchain");
+    const validated = await validateToolchainClosure(path.join(treeRoot, "prebuilds/win32-x64/toolchain"));
+    assert(validated.closure.projection?.platformTarget === "win32-x64", "prebuild requires explicit platform projection");
+  } else assert(!manifest.supportedPlatforms?.length, "supportedPlatforms requires matching prebuilds");
   const nodeModulesEntry = inventory.entries.find((entry) =>
-    entry.path.split("/").includes("node_modules"),
+    entry.path.split("/").some(part => part.toLowerCase() === "node_modules") && !entry.path.startsWith("prebuilds/win32-x64/toolchain/node_modules/"),
   );
   assert(
     nodeModulesEntry === undefined,

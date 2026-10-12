@@ -91,11 +91,27 @@ function createCapabilityEndpoint(toolDescriptor) {
 function createDescriptor(options = {}) {
   const pluginRoot = path.resolve(options.pluginRoot || path.join(__dirname, '..'));
   const registryRoot = path.resolve(options.registryRoot || path.join(os.homedir(), '.rocut'));
+  // The restricted Tool Host launcher does not inherit application configuration.
+  // Declare only this tool's existing, non-secret toolchain/decoder settings.
+  const nativeEnvironment = {};
+  for (const name of [
+    'ROCUT_ENGINE_TOOLCHAIN_DIR',
+    'ROCUT_NATIVE_FFMPEG_PATH',
+    'ROCUT_NATIVE_FFPROBE_PATH',
+  ]) {
+    if (process.env[name] !== undefined) nativeEnvironment[name] = process.env[name];
+  }
 
   return {
     toolId: TOOL_ID,
     htmlFrameCapture: 'v1',
-    htmlFrameCaptureCapabilities: ['particle-surface-session-v2'],
+    htmlFrameCaptureCapabilities: [
+      'particle-surface-session-v2',
+      'liquid-object-session-v2',
+      'html-frames-native-video-v1',
+      'html-frames-native-audio-v1',
+      'html-frames-native-audio-session-v1',
+    ],
     displayName: 'rocut video editor',
     projectsDirName: 'rocut',
     project: {
@@ -124,6 +140,7 @@ function createDescriptor(options = {}) {
       env: {
         ELECTRON_RUN_AS_NODE: '1',
         ROCUT_TARGETS_ROOT: registryRoot,
+        ...nativeEnvironment,
       },
     },
     registry: {

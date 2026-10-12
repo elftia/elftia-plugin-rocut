@@ -3,14 +3,26 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const require = createRequire(import.meta.url);
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const main = require(path.join(repoRoot, "main", "index.cjs")) as {
   activate(host: unknown): unknown;
-  createDescriptor(options?: { pluginRoot?: string; registryRoot?: string }): Record<string, any>;
+  createDescriptor(options?: {
+    pluginRoot?: string;
+    registryRoot?: string;
+  }): Record<string, any>;
 };
+const nativeSettings = [
+  "ROCUT_ENGINE_TOOLCHAIN_DIR",
+  "ROCUT_NATIVE_FFMPEG_PATH",
+  "ROCUT_NATIVE_FFPROBE_PATH",
+];
+afterEach(() => vi.unstubAllEnvs());
 
 describe("rocut main extension", () => {
   it("registers exactly one host-owned Tool Host descriptor", () => {
@@ -24,7 +36,13 @@ describe("rocut main extension", () => {
     expect(descriptor).toMatchObject({
       toolId: "rocut",
       htmlFrameCapture: "v1",
-      htmlFrameCaptureCapabilities: ["particle-surface-session-v2"],
+      htmlFrameCaptureCapabilities: [
+        "particle-surface-session-v2",
+        "liquid-object-session-v2",
+        "html-frames-native-video-v1",
+        "html-frames-native-audio-v1",
+        "html-frames-native-audio-session-v1",
+      ],
       displayName: "rocut video editor",
       projectsDirName: "rocut",
       healthPath: "/health",
@@ -37,6 +55,7 @@ describe("rocut main extension", () => {
   });
 
   it("points launch and rendezvous paths at the installed runtime", () => {
+    for (const name of nativeSettings) vi.stubEnv(name, undefined);
     const pluginRoot = path.join(os.tmpdir(), "rocut-plugin-fixture");
     const registryRoot = path.join(os.tmpdir(), "rocut-registry-fixture");
     const descriptor = main.createDescriptor({ pluginRoot, registryRoot });
@@ -56,8 +75,28 @@ describe("rocut main extension", () => {
     });
     expect(descriptor.registry).toEqual({
       indexPath: path.join(path.resolve(registryRoot), "targets.json"),
-      secretPathTemplate: path.join(path.resolve(registryRoot), "targets", "{id}.json"),
+      secretPathTemplate: path.join(
+        path.resolve(registryRoot),
+        "targets",
+        "{id}.json",
+      ),
     });
+  });
+
+  it("explicitly declares only its native configuration without changing empty or absent settings", () => {
+    vi.stubEnv("ROCUT_ENGINE_TOOLCHAIN_DIR", "C:/configured toolchain");
+    vi.stubEnv("ROCUT_NATIVE_FFMPEG_PATH", "");
+    vi.stubEnv("ROCUT_NATIVE_FFPROBE_PATH", undefined);
+    vi.stubEnv("ROCUT_UNRELATED_SECRET", "must-not-forward");
+    const descriptor = main.createDescriptor();
+    expect(descriptor.launch.env.ROCUT_ENGINE_TOOLCHAIN_DIR).toBe(
+      "C:/configured toolchain",
+    );
+    expect(descriptor.launch.env.ROCUT_NATIVE_FFMPEG_PATH).toBe("");
+    expect(descriptor.launch.env).not.toHaveProperty(
+      "ROCUT_NATIVE_FFPROBE_PATH",
+    );
+    expect(descriptor.launch.env).not.toHaveProperty("ROCUT_UNRELATED_SECRET");
   });
 
   it("fails loudly on an older host without the v1.51 port", () => {

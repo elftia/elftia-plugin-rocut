@@ -25,10 +25,10 @@
   "contributes": {
     "main": {
       "entry": "index.cjs",
-      "checksum": "sha512-96Zg3J+RtdOTbJy0o87YQI8j7BABpIaW4zyZykfBma0TxLwFy6ZAmDbG2OixApjVuxJJN/KFSJy+keg9LjXI8A==",
+      "checksum": "sha512-WTkbBrFsQ56Fiqn+hu0Q/qx7NCywd0qtLS8Dp2VP6nntE0wA2a4O/VB+bwAcSd9d8hbL4RdghpEtI3pgoqLV7A==",
       "requiredMajor": 1,
-      "requiredMinor": 51,
-      "builtAgainst": "1.54.0"
+      "requiredMinor": 77,
+      "builtAgainst": "1.77.0"
     },
     "agent": {
       "skills": [

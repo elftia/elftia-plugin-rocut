@@ -121,8 +121,8 @@ describe("manifest", () => {
     expect(manifest.contributes.main).toMatchObject({
       entry: "index.cjs",
       requiredMajor: 1,
-      requiredMinor: 51,
-      builtAgainst: "1.54.0",
+      requiredMinor: 77,
+      builtAgainst: "1.77.0",
     });
     expect(manifest.contributes.main.checksum).toMatch(/^sha512-[A-Za-z0-9+/]{86}==$/u);
     expect(manifest.permissions).toContain("host:tool-hosts");

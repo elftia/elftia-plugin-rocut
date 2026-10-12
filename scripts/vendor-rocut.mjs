@@ -45,7 +45,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { FORBIDDEN_BRAND_DIGESTS, sha256 } from "./dist-layout.mjs";
+import { FORBIDDEN_BRAND_DIGESTS, RUN_FILE_PATTERN, sha256 } from "./dist-layout.mjs";
 import { inventoryVendorTree, renderProvenance } from "./provenance.mjs";
 
 const pluginRoot = path.resolve(
@@ -54,8 +54,6 @@ const pluginRoot = path.resolve(
 );
 
 const UPSTREAM_REPOSITORY = "https://github.com/DumoeDss/rocut";
-const RUN_FILE_PATTERN =
-  /^(rocut\.mjs|chunk-[A-Za-z0-9_-]+\.js|opencut_wasm_bg\.wasm)$/;
 /** The one branding path the editor header resolves at run time. */
 const BRANDING_LOGO_RELATIVE = "logos/opencut/svg/logo.svg";
 

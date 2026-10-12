@@ -402,6 +402,29 @@ Consequences worth knowing:
   is non-trivial in size. `verify <tick>` proves COMPOSITION, not the encoded
   pixels — for look-and-feel, tell the user to watch it.
 
+## PNG snapshots — capture rendered pixels
+
+```bash
+node "$CLI" snapshot --tick 120000 --out ./frame.png --target "$TARGET"
+# --revision <current-project-revision>  --surface <attached-editor-surface-id>
+```
+
+Supply an explicit nonnegative integer tick (120000 ticks per second), within
+the project's last frame time. The project's editor pane must be attached;
+the host selects one matching surface, or use `--surface` if several qualify.
+The command fixes the project revision before capture and does not edit the
+timeline. Use `--revision` to require the revision you just read.
+
+Success returns `status: "complete"`, `format: "png"`, `tick`, `sourceRevision`,
+`jobId`, `outputPath`, and `managedOutputPath`. The managed PNG lives under the
+project's `exports/`; `--out` also copies it to the requested local path.
+This is rendered PNG delivery, unlike the structural digest from `verify`.
+Default snapshots use the timeline's opaque background; do not promise a
+transparent PNG mode. Check the delivered file before claiming success.
+If `snapshot` is unknown, the installed plugin needs an update. If no matching
+pane is attached, open that project's editor rather than retrying in a loop.
+For revision conflicts, re-read and confirm the intended revision before retry.
+
 ## Drafts (review-before-commit)
 
 Multi-step or creative changes go through a draft so the user can review in

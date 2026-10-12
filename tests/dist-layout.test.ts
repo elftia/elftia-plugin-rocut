@@ -17,7 +17,11 @@ import {
   REQUIRED_RUNTIME_FILES,
   RUNTIME_ROOT_ENTRIES,
   validateRocutTree,
+  assertRocutPackageBudget,
 } from "../scripts/dist-layout.mjs";
+import { copyToolchainClosure } from "../scripts/toolchain-closure.mjs";
+import { composeToolchainSources } from "../scripts/toolchain-sources.mjs";
+import { projectToolchainPrebuild } from "../scripts/toolchain-prebuild.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -65,7 +69,7 @@ async function buildFakeTree(): Promise<string> {
           entry: "index.cjs",
           checksum: sha512Text(MAIN_FIXTURE),
           requiredMajor: 1,
-          requiredMinor: 51,
+          requiredMinor: 77,
           builtAgainst: "1.54.0",
         },
         agent: {
@@ -108,6 +112,47 @@ async function buildFakeTree(): Promise<string> {
 }
 
 describe("artifact mapping", () => {
+  it("preflights Core expanded bytes before packaging or installation", () => {
+    expect(assertRocutPackageBudget({ entries: [{ path: "fixture", size: 268435456 }] }).headroomBytes).toBe(0);
+    expect(() => assertRocutPackageBudget({ entries: [{ path: "fixture", size: 268435457 }] })).toThrow(/declared expanded bytes.*Core/);
+    expect(() => assertRocutPackageBudget({ entries: Array.from({ length: 4097 }, () => ({ path: "fixture", size: 0 })) })).toThrow(/4096 archive entries/);
+  });
+  it("admits node_modules only inside an exact licensed toolchain closure", async () => {
+    const source = await buildFakeTree();
+    const toolchain = path.join(await scratch(), "toolchain");
+    const packages: Record<string, { version: string; integrity: string }> = {};
+    for (const [name, version] of [["@hyperframes/core", "0.8.139"], ["acorn", "8.19.0"]]) {
+      const relative = `node_modules/${name}`;
+      const directory = path.join(toolchain, relative);
+      await mkdir(directory, { recursive: true });
+      await writeFile(path.join(directory, "package.json"), JSON.stringify({ name, version, ...(name === "acorn" ? { license: "MIT" } : {}) }));
+      await writeFile(path.join(directory, "LICENSE"), "MIT permission notice");
+      packages[relative] = { version, integrity: "sha512-AAAA" };
+    }
+    const compiler = path.join(toolchain, "node_modules/@hyperframes/core/dist/compiler");
+    await mkdir(compiler, { recursive: true });
+    await writeFile(path.join(compiler, "index.js"), "export {};");
+    await writeFile(path.join(toolchain, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages }));
+    const composed = path.join(await scratch(), "composed");
+    await composeToolchainSources([{ directory: toolchain, engines: ["hyperframes"], licenseEvidence: [{ name: "@hyperframes/core", version: "0.8.139", license: "MIT", noticePath: "LICENSE", sha256: createHash("sha256").update("MIT permission notice").digest("hex") }] }], composed);
+    const candidateManifest = JSON.parse(await readFile(path.join(source, "elftia-plugin.json"), "utf8"));
+    candidateManifest.supportedPlatforms = ["win32-x64"];
+    await writeFile(path.join(source, "elftia-plugin.json"), JSON.stringify(candidateManifest));
+    await mkdir(path.join(source, "prebuilds/win32-x64"), { recursive: true });
+    await projectToolchainPrebuild(composed, path.join(source, "prebuilds/win32-x64/toolchain"), "win32-x64");
+    expect(await readFile(path.join(source, "prebuilds/win32-x64/toolchain/source-closure-manifest.json"), "utf8")).toBe(await readFile(path.join(composed, "closure-manifest.json"), "utf8"));
+    const inventory = await inventoryRocutSources(source);
+    expect(inventory.entries.some(entry => entry.path === "prebuilds/win32-x64/toolchain/rocut-engine-toolchain.json")).toBe(true);
+    await validateRocutTree(source, inventory);
+    candidateManifest.supportedPlatforms = ["linux-x64"];
+    await writeFile(path.join(source, "elftia-plugin.json"), JSON.stringify(candidateManifest));
+    await expect(validateRocutTree(source)).rejects.toThrow(/supportedPlatforms/);
+    candidateManifest.supportedPlatforms = ["win32-x64"];
+    await writeFile(path.join(source, "elftia-plugin.json"), JSON.stringify(candidateManifest));
+    await writeFile(path.join(source, "prebuilds/win32-x64/toolchain/node_modules/acorn/extra.js"), "undeclared");
+    await expect(validateRocutTree(source)).rejects.toThrow(/pins mismatch|undeclared/);
+  });
+
   it("names every shipped path explicitly instead of excluding", () => {
     expect(ARTIFACT_MAPPING.map((rule) => rule.source)).toEqual([
       "elftia-plugin.json",
@@ -120,6 +165,7 @@ describe("artifact mapping", () => {
       "vendor/PROVENANCE.md",
       "vendor/run",
       "vendor/surface",
+      "prebuilds/win32-x64/toolchain",
     ]);
   });
 
@@ -214,6 +260,14 @@ describe("trademark gate", () => {
 });
 
 describe("install-tree validation fails closed", () => {
+  it.each([51, 76, 78])("rejects an ABI minor other than current77: %s", async (minor) => {
+    const root = await buildFakeTree();
+    const file = path.join(root, "elftia-plugin.json");
+    const manifest = JSON.parse(await readFile(file, "utf8"));
+    manifest.contributes.main.requiredMinor = minor;
+    await writeFile(file, JSON.stringify(manifest));
+    await expect(validateRocutTree(root)).rejects.toThrow("manifest main requiredMinor must be 77");
+  });
   it("accepts a structurally valid tree", async () => {
     const root = await buildFakeTree();
     const result = await validateRocutTree(root);

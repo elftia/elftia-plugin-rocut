@@ -17,8 +17,10 @@ import {
   inventoryRocutSources,
   PLUGIN_ID,
   validateRocutTree,
+  assertRocutPackageBudget,
 } from "./dist-layout.mjs";
 import { verifyVendorAgainstProvenance } from "./provenance.mjs";
+import { prepareSelectedSources } from "./selected-runtime.mjs";
 
 const defaultRepoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -83,12 +85,20 @@ async function assertVendorPresent(repoRoot) {
 }
 
 export async function buildDist(options = {}) {
-  const repoRoot = options.repoRoot ?? defaultRepoRoot;
+  if ((options.toolchainDir || options.toolchainSources) && !options.runtimeDir) throw new Error("toolchain sources require explicit selected runtime/surface/manifest inputs");
+  let repoRoot = options.repoRoot ?? defaultRepoRoot;
+  let selection = null;
+  if (options.runtimeDir || options.surfaceDir || options.packManifest) {
+    if (!options.runtimeDir || !options.surfaceDir || !options.packManifest) throw new Error("runtimeDir, surfaceDir and packManifest must be supplied together");
+    selection = await prepareSelectedSources(repoRoot, options);
+    repoRoot = selection.sourceRoot;
+  }
   await assertVendorPresent(repoRoot);
   const provenance = await verifyVendorAgainstProvenance(
     join(repoRoot, "vendor"),
   );
   const sourceInventory = await inventoryRocutSources(repoRoot);
+  const packageBudget = assertRocutPackageBudget(sourceInventory);
   const result = await publishTreeAtomically({
     repoRoot,
     targetRelative: `dist/${PLUGIN_ID}`,
@@ -98,16 +108,20 @@ export async function buildDist(options = {}) {
     validateTree: validateRocutTree,
     fault: options.fault,
   });
-  return { ...result, provenance };
+  return { ...result, provenance, selection, packageBudget };
 }
 
 const invokedPath =
   process.argv[1] === undefined ? null : pathToFileURL(process.argv[1]).href;
 if (invokedPath === import.meta.url) {
   try {
-    const result = await buildDist();
+    const argv = process.argv.slice(2);
+    const flag = name => { const index = argv.indexOf(`--${name}`); return index < 0 ? undefined : argv[index + 1]; };
+    const result = await buildDist({ runtimeDir: flag("runtime-dir"), surfaceDir: flag("surface-dir"), packManifest: flag("pack-manifest"), outputRoot: flag("output-root"), toolchainDir: flag("toolchain-dir"), toolchainEngines: flag("toolchain-engines")?.split(","), platformTarget: flag("platform-target") });
     console.info(
-      `build-dist: vendor OK (${result.provenance.fileCount} files pinned to ${String(result.provenance.upstreamCommit).slice(0, 12)})`,
+      result.selection
+        ? `build-dist: selected vendor OK (${result.provenance.fileCount} files; HEAD ${result.selection.facts.repoHead}, dirty=${result.selection.facts.dirty}; not pin-only)`
+        : `build-dist: vendor OK (${result.provenance.fileCount} files pinned to ${String(result.provenance.upstreamCommit).slice(0, 12)})`,
     );
     console.info(
       `build-dist: PASS (${result.inventory.fileCount} files, ${result.inventory.sha256}) -> ${result.target}`,
