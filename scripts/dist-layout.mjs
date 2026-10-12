@@ -156,8 +156,13 @@ export function sha256(bytes) {
 }
 
 function sha512(bytes) {
-  // Canonical @elftia/plugin-kit form: `sha512-<base64>` over the entry bytes.
-  return `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
+  // Host/plugin-kit LF-law folds CRLF only for non-NUL text. latin1 keeps
+  // every other byte exact; lone CR, BOM and binary bytes are not rewritten.
+  const canonical =
+    bytes.length === 0 || bytes.includes(0) || !bytes.includes(0x0d)
+      ? bytes
+      : Buffer.from(bytes.toString("latin1").replace(/\r\n/g, "\n"), "latin1");
+  return `sha512-${createHash("sha512").update(canonical).digest("base64")}`;
 }
 
 function inventoryDigest(entries) {

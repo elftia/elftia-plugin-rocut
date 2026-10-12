@@ -384,6 +384,37 @@ describe("install-tree validation fails closed", () => {
     );
   });
 
+  it("accepts CRLF working-source bytes against the canonical LF checksum without rewriting them", async () => {
+    const root = await buildFakeTree();
+    const file = path.join(root, "main/index.cjs");
+    const workingSource = MAIN_FIXTURE.replaceAll("\n", "\r\n");
+    await writeFile(file, workingSource);
+    const result = await validateRocutTree(root);
+    expect(result.manifest.contributes.main.checksum).toBe(sha512Text(MAIN_FIXTURE));
+    expect(await readFile(file, "utf8")).toBe(workingSource);
+  });
+
+  it("rejects a non-newline content change even in CRLF working-source bytes", async () => {
+    const root = await buildFakeTree();
+    await writeFile(path.join(root, "main/index.cjs"), "module.exports = { changed: true };\r\n");
+    await expect(validateRocutTree(root)).rejects.toThrow(
+      /manifest main checksum must match main\/index\.cjs/,
+    );
+  });
+
+  it("rejects a raw CRLF checksum rather than accepting two checksum laws", async () => {
+    const root = await buildFakeTree();
+    const workingSource = MAIN_FIXTURE.replaceAll("\n", "\r\n");
+    const manifestFile = path.join(root, "elftia-plugin.json");
+    const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+    manifest.contributes.main.checksum = sha512Text(workingSource);
+    await writeFile(manifestFile, JSON.stringify(manifest));
+    await writeFile(path.join(root, "main/index.cjs"), workingSource);
+    await expect(validateRocutTree(root)).rejects.toThrow(
+      /manifest main checksum must match main\/index\.cjs/,
+    );
+  });
+
   it("rejects a tree with no esbuild chunk beside the entry", async () => {
     const root = await buildFakeTree();
     await rm(path.join(root, "vendor/run/chunk-AAAAAAAA.js"));
