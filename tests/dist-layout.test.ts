@@ -113,8 +113,10 @@ async function buildFakeTree(): Promise<string> {
 
 describe("artifact mapping", () => {
   it("preflights Core expanded bytes before packaging or installation", () => {
-    expect(assertRocutPackageBudget({ entries: [{ path: "fixture", size: 268435456 }] }).headroomBytes).toBe(0);
-    expect(() => assertRocutPackageBudget({ entries: [{ path: "fixture", size: 268435457 }] })).toThrow(/declared expanded bytes.*Core/);
+    expect(assertRocutPackageBudget({ entries: [{ path: "fixture", size: 1073741824 }] }).headroomBytes).toBe(0);
+    expect(() => assertRocutPackageBudget({ entries: [{ path: "fixture", size: 1073741825 }] })).toThrow(/declared expanded bytes.*Core/);
+    expect(assertRocutPackageBudget({ entries: [{ path: "fixture", size: 268435457 }] }).expandedByteLimit).toBe(1073741824);
+    expect(assertRocutPackageBudget({ entries: Array.from({ length: 4096 }, () => ({ path: "fixture", size: 0 })) }).fileCount).toBe(4096);
     expect(() => assertRocutPackageBudget({ entries: Array.from({ length: 4097 }, () => ({ path: "fixture", size: 0 })) })).toThrow(/4096 archive entries/);
   });
   it("admits node_modules only inside an exact licensed toolchain closure", async () => {

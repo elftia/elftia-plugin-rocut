@@ -183,6 +183,11 @@ The vendor step also refuses an upstream tree with modified tracked files unless
 `--allow-modified-tracked` is passed, which discloses the paths, the diffstat
 and per-file digests in the shipped provenance rather than hiding them.
 
+The package's declared expanded-size cap is **1 GiB (1,073,741,824 bytes)**,
+aligned with Elftia Core's explicitly authorized archive limit. The **4096-entry**
+cap, exact inventory/checksum checks, platform projection and toolchain/profile
+closure checks remain unchanged; this does not raise compiler-consumer or data-pack budgets.
+
 ## Real-host test ownership
 
 Current-source SDK packed-manifest closure passes for all four freshly packed

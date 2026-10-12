@@ -20,7 +20,7 @@ import path from "node:path";
 import { validateToolchainClosure } from "./toolchain-closure.mjs";
 
 export const PLUGIN_ID = "rocut";
-export const MAX_PLUGIN_EXPANDED_BYTES = 268435456;
+export const MAX_PLUGIN_EXPANDED_BYTES = 1073741824;
 export function assertRocutPackageBudget(inventory) {
   assert(inventory.entries.length <= 4096, "plugin tree exceeds official 4096 archive entries");
   assert(inventory.entries.every(e => Number.isSafeInteger(e.size) && e.size >= 0), "invalid plugin inventory byte count");
