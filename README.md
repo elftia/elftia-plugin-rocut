@@ -91,7 +91,7 @@ The plugin version is independent of the SDK package versions and the existing t
 
 ## Install and open the Pane
 
-Use an Elftia build with Host API **1.51 or newer**. Install `dist/rocut/` from
+Use an Elftia build with Host API **1.75 or newer** for this 0.6.4 candidate. Install `dist/rocut/` from
 the plugin manager (or install the packaged release), enable the plugin, then
 toggle it once or restart Elftia after replacing an older `kind: agent` build.
 
@@ -220,6 +220,25 @@ and video encoder remain unchanged and browser-based. Desktop exit cancels
 captures, not the daemon; reopening refreshes discovery at the stable path.
 Disabling the plugin revokes its grant. Older hosts continue to run the editor
 without this optional capture service.
+
+### Optional programmatic engine and native decoder configuration
+
+HyperFrames/Remotion compilation and native video decoding require separately
+provisioned tools. The epkg includes Rocut's editor/runtime, not the complete
+engine toolchain or FFmpeg binaries. Configure these absolute paths in the
+environment used to start Elftia:
+
+- `ROCUT_ENGINE_TOOLCHAIN_DIR`: the prepared Rocut-compatible engine toolchain.
+- `ROCUT_NATIVE_FFMPEG_PATH`: the FFmpeg executable.
+- `ROCUT_NATIVE_FFPROBE_PATH`: the FFprobe executable.
+
+The plugin explicitly forwards only these three settings to the restricted
+Tool Host launcher. It preserves absent and empty settings and never guesses a
+developer checkout or forwards unrelated environment variables. Restart Elftia
+after changing launch configuration. A configured path alone is not a health
+check: compilation/decoding must still validate and successfully use the tools.
+Ordinary editing does not require these optional tools. Automatic provisioning
+and a persistent settings UI are not implemented by this configuration bridge.
 
 This is not a vendor/dist/installed-plugin update. Deploy matching host and
 Rocut runtime builds before claiming installed acceptance. See the Rocut source
