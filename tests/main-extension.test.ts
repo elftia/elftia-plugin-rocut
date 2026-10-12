@@ -102,4 +102,22 @@ describe("rocut main extension", () => {
   it("fails loudly on an older host without the v1.51 port", () => {
     expect(() => main.activate({})).toThrow(/host\.toolHosts.*1\.51/);
   });
+
+  it.each(nativeSettings)("forwards configured %s to the Tool Host", (name) => {
+    for (const setting of nativeSettings) vi.stubEnv(setting, undefined);
+    vi.stubEnv(name, "C:/configured tool path");
+    const descriptor = main.createDescriptor();
+    expect(descriptor.launch.env[name]).toBe("C:/configured tool path");
+    for (const setting of nativeSettings.filter((key) => key !== name)) {
+      expect(descriptor.launch.env).not.toHaveProperty(setting);
+    }
+  });
+
+  it("preserves empty configuration without forwarding unrelated settings", () => {
+    for (const name of nativeSettings) vi.stubEnv(name, "");
+    vi.stubEnv("ROCUT_UNRELATED_SECRET", "must-not-forward");
+    const descriptor = main.createDescriptor();
+    for (const name of nativeSettings) expect(descriptor.launch.env[name]).toBe("");
+    expect(descriptor.launch.env).not.toHaveProperty("ROCUT_UNRELATED_SECRET");
+  });
 });

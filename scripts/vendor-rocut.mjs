@@ -57,6 +57,7 @@ import {
 } from "./dist-layout.mjs";
 import { inventoryVendorTree, renderProvenance } from "./provenance.mjs";
 import { prepareVendorPaths } from "./vendor-paths.mjs";
+import { assertRuntimeSidecarClosure } from "./runtime-sidecars.mjs";
 
 const pluginRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -545,13 +546,13 @@ export async function vendorRocut(options = {}) {
     );
   }
 
+  await assertRuntimeSidecarClosure(packOut);
   await io.rm(vendorRoot, { recursive: true, force: true });
   await io.mkdir(vendorRoot, { recursive: true });
 
   // vendor/run — the bundled CLI closure. Flat by construction: the pack output
   // root holds the entry, its chunks, the wasm sibling and its own PROVENANCE;
-  // only the first three are runtime bytes, and the wasm must stay a sibling of
-  // the chunk that imports it, so the flat shape is load-bearing.
+  // the fixed worker sidecars and WASM stay siblings of their importing chunk.
   const runRoot = path.join(vendorRoot, "run");
   await io.mkdir(runRoot, { recursive: true });
   const runFiles = [];

@@ -5,6 +5,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { assertNoForbiddenBranding } from "./dist-layout.mjs";
+import { assertRuntimeSidecarClosure } from "./runtime-sidecars.mjs";
 import {
   inventoryVendorTree,
   verifyVendorAgainstProvenance,
@@ -16,6 +17,7 @@ const vendorRoot = join(repoRoot, "vendor");
 try {
   const result = await verifyVendorAgainstProvenance(vendorRoot);
   const entries = await inventoryVendorTree(vendorRoot);
+  await assertRuntimeSidecarClosure(join(vendorRoot, "run"));
   assertNoForbiddenBranding({ entries });
   console.info(
     `verify-vendor: PASS (${result.fileCount} files match vendor/PROVENANCE.md; upstream ${String(result.upstreamCommit).slice(0, 12)}; no upstream brand marks)`,
