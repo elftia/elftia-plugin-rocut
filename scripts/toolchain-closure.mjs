@@ -4,6 +4,7 @@ import { copyFile, lstat, mkdir, readdir, readFile, realpath, writeFile } from "
 import path from "node:path";
 import { PROJECTION_POLICY, CI_VCS_SEGMENTS, isProjectedRemoval } from "./toolchain-projection-policy.mjs";
 import { assertCompilerProfile, isCompilerOmission, maySkipCompilerDependency, ownsFile, PROFILE_ENTRY_POINTS } from "./toolchain-compiler-profile.mjs";
+import { validateSelectedToolchainDelivery } from "./selected-delivery-bytes.mjs";
 
 export const ENGINE_PACKAGES = Object.freeze({
   hyperframes: { "@hyperframes/core": "0.8.139", acorn: "8.19.0" },
@@ -176,19 +177,23 @@ export async function validateToolchainClosure(directory) {
   const marker = await json(path.join(directory, "rocut-engine-toolchain.json"));
   assert.deepEqual(Object.keys(marker).sort(), ["engines", "kind", "version"]);
   assert(marker.version === 1 && marker.kind === "rocut-engine-toolchain", "invalid toolchain marker");
-  const closure = await json(path.join(directory, "closure-manifest.json"));
-  const inspected = await inspectToolchainSource(directory, marker.engines, closure.licenseEvidence ?? [], closure.consumerProfile?.id);
-  assert.equal(closure.version, 1, "invalid toolchain closure version");
-  assert.equal(closure.packageLockSha256, inspected.packageLockSha256, "toolchain lock digest mismatch");
-  assert.deepEqual(closure.packages, inspected.packages.map(({ files: ignored, ...p }) => p), "toolchain package metadata mismatch");
-  assert.deepEqual(closure.files, inspected.files, "toolchain package file pins mismatch");
+  const delivered = await json(path.join(directory, "closure-manifest.json"));
+  const inspected = await inspectToolchainSource(directory, marker.engines, delivered.licenseEvidence ?? [], delivered.consumerProfile?.id);
+  assert.equal(delivered.version, 1, "invalid toolchain closure version");
+  assert.equal(delivered.packageLockSha256, inspected.packageLockSha256, "toolchain lock digest mismatch");
+  assert.deepEqual(delivered.packages, inspected.packages.map(({ files: ignored, ...p }) => p), "toolchain package metadata mismatch");
+  assert.deepEqual(delivered.files, inspected.files, "toolchain package file pins mismatch");
+  const normalization = await validateSelectedToolchainDelivery(directory, delivered);
+  const closure = normalization?.original ?? delivered;
+  const readSource = normalization?.readOriginal ?? (relative => readFile(path.join(directory, relative)));
+  const sourceJson = async relative => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await readSource(relative)));
   const actual = await files(directory);
   const sourceLocks = closure.sourceLocks ?? [];
   const originalLocks = new Map();
   for (const pin of sourceLocks) {
     assert(safe(pin.path) && pin.path.startsWith("source-locks/"), "invalid source lock path");
-    assert.equal(digest(await readFile(path.join(directory, ...pin.path.split("/")))), pin.sha256, "source lock digest mismatch");
-    originalLocks.set(pin.path, await json(path.join(directory, ...pin.path.split("/"))));
+    assert.equal(digest(await readSource(pin.path)), pin.sha256, "source lock digest mismatch");
+    originalLocks.set(pin.path, await sourceJson(pin.path));
   }
   if (sourceLocks.length) {
     const merged = await json(path.join(directory, "package-lock.json"));
@@ -205,7 +210,7 @@ export async function validateToolchainClosure(directory) {
     if (projection.policy === PROJECTION_POLICY) assert.deepEqual(projection.ciVcsSegments, CI_VCS_SEGMENTS, "CI/VCS projection must match SDK forbidden segments");
     assert.equal(projection.platformTarget, "win32-x64", "unknown projected platform target");
     assert.equal(projection.sourceClosurePath, "source-closure-manifest.json");
-    const originalBytes = await readFile(path.join(directory, projection.sourceClosurePath));
+    const originalBytes = await readSource(projection.sourceClosurePath);
     assert.equal(digest(originalBytes), projection.sourceClosureSha256, "source closure digest mismatch");
     const original = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(originalBytes));
     assert(!original.projection, "projection source must be complete");
@@ -218,7 +223,7 @@ export async function validateToolchainClosure(directory) {
       assert.deepEqual(profile.omittedPackages, omitted.map(p => ({ ...p, reason: "not-reachable-from-reviewed-rocut-compiler-entrypoints", files: original.files.filter(f => ownsFile(p.path, f.path)) })), "compiler omitted package pins mismatch");
       assert.deepEqual(original.packages.filter(p => !omitted.some(o => o.path === p.path)), closure.packages, "compiler profile changed retained package metadata");
       assert.equal(profile.evidencePath, "compiler-profile-evidence.json");
-      const evidenceBytes = await readFile(path.join(directory, profile.evidencePath));
+      const evidenceBytes = await readSource(profile.evidencePath);
       assert.equal(digest(evidenceBytes), profile.evidenceSha256, "compiler evidence digest mismatch");
       const evidence = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(evidenceBytes));
       assert.deepEqual(evidence.nonLiteralDynamic, [], "compiler evidence has unresolved dynamic imports");
@@ -237,7 +242,7 @@ export async function validateToolchainClosure(directory) {
     assert.deepEqual(reconstructed, original.files, "projection lost or changed original file pins");
   }
   assert(!closure.consumerProfile || closure.projection, "compiler profile requires full source projection evidence");
-  const allowed = new Set([...closure.files.map(e => e.path), ...sourceLocks.map(e => e.path), ...(closure.projection ? ["source-closure-manifest.json"] : []), ...(closure.consumerProfile ? ["compiler-profile-evidence.json"] : []), "package-lock.json", "closure-manifest.json", "rocut-engine-toolchain.json"]);
+  const allowed = new Set([...closure.files.map(e => e.path), ...sourceLocks.map(e => e.path), ...(closure.projection ? ["source-closure-manifest.json"] : []), ...(closure.consumerProfile ? ["compiler-profile-evidence.json"] : []), ...(normalization?.additionalAllowed ?? []), "package-lock.json", "closure-manifest.json", "rocut-engine-toolchain.json"]);
   assert(actual.every(e => allowed.has(e.path)) && actual.length === allowed.size, "undeclared toolchain file or missing closure file");
-  return { marker, closure, fileCount: actual.length, bytes: actual.reduce((n,e) => n + e.size, 0) };
+  return { marker, closure: delivered, fileCount: actual.length, bytes: actual.reduce((n,e) => n + e.size, 0) };
 }

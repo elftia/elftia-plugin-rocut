@@ -7,6 +7,7 @@ import { rewriteAssetManifest, assertMotionTextFontNotice, validateSurfaceAssetM
 import { copyToolchainClosure, validateToolchainClosure } from "./toolchain-closure.mjs";
 import { composeToolchainSources } from "./toolchain-sources.mjs";
 import { projectToolchainPrebuild } from "./toolchain-prebuild.mjs";
+import { normalizeDeliveryBytes, refreshSelectedSurfaceManifest, normalizeSelectedToolchain } from "./selected-delivery-bytes.mjs";
 
 export async function inspectSelectedRuntime(runtimeDir, manifestPath) {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
@@ -43,13 +44,16 @@ export async function prepareSelectedSources(repoRoot, options) {
   assert((await lstat(parent)).isDirectory() && !(await lstat(parent)).isSymbolicLink(), "outputRoot must be an ordinary fresh directory");
   assert(path.resolve(await realpath(parent)).toLowerCase() === parent.toLowerCase(), "redirected outputRoot rejected");
   const sourceRoot = await mkdtemp(path.join(parent, "selected-source-"));
+  const deliveryNormalizations = [];
   const copy = async (source, target, expectedHash) => {
     const state = await lstat(source);
     assert(state.isFile() && !state.isSymbolicLink(), `selected source must be a regular file: ${source}`);
     const bytes = await readFile(source);
     if (expectedHash) assert.equal(sha256(bytes), expectedHash, `selected source drift: ${source}`);
     await mkdir(path.dirname(target), { recursive: true });
-    await writeFile(target, bytes, { flag: "wx" });
+    const delivered = normalizeDeliveryBytes(bytes);
+    await writeFile(target, delivered, { flag: "wx" });
+    if (!bytes.equals(delivered)) deliveryNormalizations.push({ path: path.relative(sourceRoot, target).split(path.sep).join("/"), sourceSha256: sha256(bytes), deliveredSha256: sha256(delivered), sourceBytes: bytes.length, deliveredBytes: delivered.length });
   };
   const realRepoRoot = await realpath(repoRoot);
   const sourcePins = [];
@@ -58,7 +62,7 @@ export async function prepareSelectedSources(repoRoot, options) {
     const relative = path.relative(realRepoRoot, await realpath(source));
     assert(relative && relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative), `source artifact escapes producer: ${rule.source}`);
     await copy(source, path.join(sourceRoot, rule.source));
-    sourcePins.push({ path: rule.source, sha256: sha256(await readFile(path.join(sourceRoot, rule.source))) });
+    sourcePins.push({ path: rule.source, sourceSha256: sha256(await readFile(source)), deliveredSha256: sha256(await readFile(path.join(sourceRoot, rule.source))) });
   }
   let manifestProjection = null;
   if (options.platformTarget) {
@@ -72,11 +76,12 @@ export async function prepareSelectedSources(repoRoot, options) {
   const vendor = path.join(sourceRoot, "vendor");
   for (const entry of selected.runtime) await copy(path.join(options.runtimeDir, entry.path), path.join(vendor, "run", entry.path), entry.sha256);
   for (const entry of surface.entries) if (!entry.path.startsWith("logos/")) await copy(path.join(options.surfaceDir, entry.path), path.join(vendor, "surface", entry.path), entry.sha256);
-  const placeholder = await readFile(path.join(repoRoot, "licenses", "branding-placeholder.svg"));
+  const placeholder = normalizeDeliveryBytes(await readFile(path.join(repoRoot, "licenses", "branding-placeholder.svg")));
   await mkdir(path.join(vendor, "surface", "logos", "opencut", "svg"), { recursive: true });
   await writeFile(path.join(vendor, "surface", "logos", "opencut", "svg", "logo.svg"), placeholder);
+  await refreshSelectedSurfaceManifest(path.join(vendor, "surface"));
   const rewritten = await rewriteAssetManifest(path.join(vendor, "surface"), placeholder);
-  const notice = await readFile(path.join(repoRoot, "licenses", "NOTICE.md"));
+  const notice = normalizeDeliveryBytes(await readFile(path.join(repoRoot, "licenses", "NOTICE.md")));
   assertMotionTextFontNotice(rewritten.manifest, notice.toString("utf8"));
   await copy(path.join(repoRoot, "vendor", "LICENSE"), path.join(vendor, "LICENSE"));
   await writeFile(path.join(vendor, "NOTICE.md"), notice);
@@ -97,6 +102,10 @@ export async function prepareSelectedSources(repoRoot, options) {
       toolchain = validated.closure.projection
         ? await copyToolchainClosure(input, path.join(prebuildParent, "toolchain"))
         : await projectToolchainPrebuild(input, path.join(prebuildParent, "toolchain"), options.platformTarget);
+      const deliveryRoot = path.join(prebuildParent, "toolchain");
+      const deliveryInput = await validateToolchainClosure(deliveryRoot);
+      if (!deliveryInput.closure.deliveryNormalization) toolchain = await normalizeSelectedToolchain(deliveryRoot, deliveryInput);
+      await validateToolchainClosure(deliveryRoot);
     } finally {
       if (scratch) {
         const current = await lstat(scratch, { bigint: true });
@@ -107,7 +116,7 @@ export async function prepareSelectedSources(repoRoot, options) {
     }
   }
   const entries = await inventoryVendorTree(vendor);
-  const facts = { mode: "explicit-selected-production-artifacts-not-pin-only", repoHead: selected.manifest.repoHead, dirty: selected.manifest.dirty, sourcePins, manifestProjection, runtimeManifestSha256: sha256(await readFile(options.packManifest)), runtime: selected.runtime, surfaceInput: surface.entries, brandingSubstitution: sha256(placeholder), surfaceManifestRewrite: rewritten, toolchain };
+  const facts = { mode: "explicit-selected-production-artifacts-not-pin-only", repoHead: selected.manifest.repoHead, dirty: selected.manifest.dirty, sourcePins, deliveryNormalizations, manifestProjection, runtimeManifestSha256: sha256(await readFile(options.packManifest)), runtime: selected.runtime, surfaceInput: surface.entries, brandingSubstitution: sha256(placeholder), surfaceManifestRewrite: rewritten, toolchain };
   await writeFile(path.join(vendor, "PROVENANCE.md"), `# Selected production artifact provenance\n\nNot a pin-only source build. Current producer manifest/main/skills and explicitly selected production runtime/Surface; the unchanged upstream.json default pin is not claimed to reproduce these bytes.\n\n${JSON.stringify(facts, null, 2)}\n\n## SHA-256 manifest\n\n${entries.length} files.\n\n\`\`\`\n${entries.map(e => `${e.sha256}  ${e.path}`).join("\n")}\n\`\`\`\n`);
   return { sourceRoot, facts };
 }
