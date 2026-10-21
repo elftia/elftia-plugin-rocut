@@ -262,6 +262,7 @@ canonical mutation:
     "kind": "update-planning-controls",
     "controls": {
       "presetSets": { "horror": false, "typo": true, "kinetic": true },
+      "theme": "wa",
       "unify": true,
       "centerFree": true,
       "centerDirection": "tb"
@@ -272,6 +273,12 @@ canonical mutation:
   "idempotencyKey": "creator:motion-text:planning:v1"
 }
 ```
+
+`theme` is optional and defaults to no theme. When set to one of `lyricPv`,
+`kinetic`, `wa`, `horror`, `pop` or `ballad`, variations draw only from presets
+whose catalog mood tags match that direction; a preset group with no matching
+entry keeps its full pool rather than being emptied. Omit the field — or send
+`null` — to clear it.
 
 ```bash
 node "$CLI" motion-text mutate <sequence-id> mutation.json --target "$TARGET"
