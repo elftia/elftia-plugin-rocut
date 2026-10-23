@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "source": {
+    "repository": "https://github.com/DumoeDss/director.git",
+    "commit": "920b1e8a823e8f232f6e4a0fa112b66b3868ccaa",
+    "remoteHeadObserved": "8bc5636aa889ca7e0a36a07cda41d091354e7382",
+    "remoteCommitAvailability": "not-advertised-by-remote; cached tarball carries all selected tracked source bytes",
+    "sourceSubdirectory": "packages/three-assets"
+  },
+  "compiler": {
+    "typescript": "5.9.2",
+    "dependencyLockSha256": "9b8aae5a665ff9321bb8b60321bdc97cfaa8ab627b1d5c995e3a0f0fe02bca9d",
+    "tsconfigSha256": "6b2229885b200bfccf5da73ff172df1d9616ee0ba951825093d9df484cbe06b3"
+  },
+  "archive": {
+    "file": "elftia-three-assets-0.1.1.tgz",
+    "sha256": "472e1d4a5c027ecbbc3d9863fff4e9e5f38acbe929edf28b6235f0eaa19c9db7",
+    "integrity": "sha512-lsHDIKecoZgylIooK9DbpDOxWQiGVrjVBvkxqUo8dLlFFKk2kqLjuIpGomlplJLvwdMzk/pM+07Kq5kpIJQVpw==",
+    "bytes": 1512963
+  },
+  "inputs": [
+    {
+      "path": "CODEC-PROVENANCE.md",
+      "sha256": "a5cd0b858123727621e6a22b06ac90e7c5dcbc6cdbde076101614b344381796c",
+      "bytes": 1603
+    },
+    {
+      "path": "DRACO-LICENSE.txt",
+      "sha256": "d3709b0fb4b8a94bbb1d02b8a2e484f258b0d9c5c5a01f940391f3fe662cd1a4",
+      "bytes": 13898
+    },
+    {
+      "path": "DRACO-PROVENANCE.md",
+      "sha256": "baa0a153b185a0b2ba9b7577bdeb8c786c0a12d23117622e312e6bb89c1033df",
+      "bytes": 625
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "ab1fb5b0cd47bfe39e00ad6f0f76d880890111ec0cf39b781868aa803d3a0efd",
+      "bytes": 1089
+    },
+    {
+      "path": "PROVENANCE.md",
+      "sha256": "608b3136e4b19054e37aa9e844e26231254b709b3a39d08b2514a804882abdbb",
+      "bytes": 1738
+    },
+    {
+      "path": "README.md",
+      "sha256": "2fb5a30ea8c50eb719cc5574027cb9ad9b949ca2514c88144faf09a33a15376b",
+      "bytes": 6022
+    },
+    {
+      "path": "package.json",
+      "sha256": "98ce389cf09f6ce082f529338bb46b16bd3d4aa894d138606dc0c1bbecb2a4f8",
+      "bytes": 889
+    },
+    {
+      "path": "src/draco-decoder.ts",
+      "sha256": "2e38c8947d5d30690f83115ebdc63d2ea0a42023564271f41cb5a68b6002c07d",
+      "bytes": 512388
+    },
+    {
+      "path": "src/draco.ts",
+      "sha256": "4284a01f0adf0d4e7f78340d1cd425fa113bf93b5628da0373505dc3ed68f2b5",
+      "bytes": 10227
+    },
+    {
+      "path": "src/environment-header.ts",
+      "sha256": "62bb8dab0b0d896a0ae50d2e818587bdc1a211c938ad55b0b757d58f4bca6779",
+      "bytes": 4202
+    },
+    {
+      "path": "src/environment-pmrem.ts",
+      "sha256": "94aaa0dd40b5789d8f6580c706b99fefaf8329f41f54ca8d3f964451e0afc068",
+      "bytes": 2335
+    },
+    {
+      "path": "src/environment.ts",
+      "sha256": "9101d2708546c7a494e71497f9c7b956c4c6482bc6160f0d503c5013f6abf645",
+      "bytes": 2396
+    },
+    {
+      "path": "src/exr-attributes.ts",
+      "sha256": "5e4e1491a369205266e4acd5abc2c616ea9ffbb944588da28c67f7ee72de42a7",
+      "bytes": 1893
+    },
+    {
+      "path": "src/exr-blocks.ts",
+      "sha256": "835b0c6bd1525905cb3ca9981194d22258b972f81e6acd26542c07023b5df9a7",
+      "bytes": 1775
+    },
+    {
+      "path": "src/exr-codecs.ts",
+      "sha256": "e3cdac560c01aa8ccdd1a1609cd64d6097fb7fb91bc050a3ce0169b5ec58255a",
+      "bytes": 2525
+    },
+    {
+      "path": "src/exr-compression.ts",
+      "sha256": "f5bb4e6b968d90670f252f456b64696b681e1531ce9b3193c6235c608c997a9b",
+      "bytes": 2091
+    },
+    {
+      "path": "src/exr-dwa.ts",
+      "sha256": "16949d6117a861ce2f5afcafde54b3dd8b70896ffa5be939e66e4733cbfb52fb",
+      "bytes": 3082
+    },
+    {
+      "path": "src/exr-tiles.ts",
+      "sha256": "9dea4b34f99e9e0b4984aba569d0b24cb5d170ed2896e919b36c265db4338855",
+      "bytes": 3033
+    },
+    {
+      "path": "src/glb-validation.ts",
+      "sha256": "e4fba452bfbe4aeecd4082ed7644f9a309d070ab25ba33bbaf15e76e6da05198",
+      "bytes": 9132
+    },
+    {
+      "path": "src/glb.ts",
+      "sha256": "a8b7d6d32e8b34fb9e012c6a12aee28898352e643d68b38c47f50cf695d3a705",
+      "bytes": 6954
+    },
+    {
+      "path": "src/hdr-loader.d.ts",
+      "sha256": "b69fbc85349b0657e3a882603af27e2a4d69dc3ae48da7d79c46bc99bf4367d4",
+      "bytes": 297
+    },
+    {
+      "path": "src/image.ts",
+      "sha256": "841b2159e2c222c9c30bee5f07b6027b935faea6fd8bd54b5cef51b20be04f0d",
+      "bytes": 4441
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "471e44bac03637064c3d1cdeb5364275d5ed24d219d26223fdadac73696dfb08",
+      "bytes": 687
+    },
+    {
+      "path": "src/ktx2-basis-LICENSE.txt",
+      "sha256": "9068f389fe23eac9d714ad942ed90541f7d2095cdcf9c3b9839cf6d9b459db92",
+      "bytes": 11348
+    },
+    {
+      "path": "src/ktx2-basis-README.md",
+      "sha256": "47cbc893121c439af1723a7b86a8ec47b58022e91138036733a2e82b37ff3c41",
+      "bytes": 1449
+    },
+    {
+      "path": "src/ktx2-basis.ts",
+      "sha256": "f9b152de99e1ea2eecc8f2cf40f51746676cbce3521d9c63009738897364fda7",
+      "bytes": 57649
+    },
+    {
+      "path": "src/ktx2-glb.ts",
+      "sha256": "34673143d33374d24d18b28a9fce9f7b8190abe59ac5d4822c9afff9aeb0ec57",
+      "bytes": 1388
+    },
+    {
+      "path": "src/ktx2-wasm.ts",
+      "sha256": "ff567c61b656b81be88d257f6513b9d93b3cfeef93b8a131611c3467c2ccded0",
+      "bytes": 703220
+    },
+    {
+      "path": "src/ktx2.ts",
+      "sha256": "6f07badcdc2f98ca36bf42ee1d2d5e242c494ab6613c049989b0dca1e6c5c55c",
+      "bytes": 9868
+    },
+    {
+      "path": "src/meshopt.ts",
+      "sha256": "ca87d3948ab9197eb3cd605d0974c9a22a27d64901b6454cfc6f428221038ab5",
+      "bytes": 7088
+    },
+    {
+      "path": "src/model-animation-catalog.ts",
+      "sha256": "bd23ee269acc362ca44d345bb5c79e8074c899ba18cedf5322d3b036660c619d",
+      "bytes": 7206
+    },
+    {
+      "path": "src/model-animation.ts",
+      "sha256": "4b6d7646bfed140f4be2694c9f4ed26ddb808a1e8c419099bd6b826177de43f4",
+      "bytes": 3684
+    },
+    {
+      "path": "src/model-instance.ts",
+      "sha256": "0a584fc35c034d250a6ff6d0fbbe40d90cfb2122c9a628b6d00776147f6431f8",
+      "bytes": 2962
+    },
+    {
+      "path": "src/model.ts",
+      "sha256": "5b64082e8c7ccb59424f7fd3d14c722af8c1ade91ba1650b055f69698424e755",
+      "bytes": 5481
+    },
+    {
+      "path": "src/ownership.ts",
+      "sha256": "56e10243f69de535d52c91ab2c3d2f8f13283bf332599a72d8d6621d3671a66e",
+      "bytes": 5347
+    },
+    {
+      "path": "src/svg-model.ts",
+      "sha256": "1fc7c9245419970fea89c7e8b58bbd07cf17b5e2e9065c0fd32748b05a95f607",
+      "bytes": 11469
+    },
+    {
+      "path": "src/types.ts",
+      "sha256": "ab417a909d2c7d999ab96ae8bf43a86d5e56d10d91c22da49311015e4cf7a04e",
+      "bytes": 1893
+    }
+  ],
+  "license": {
+    "package": "MIT",
+    "codecs": "Apache-2.0",
+    "notices": [
+      "LICENSE",
+      "PROVENANCE.md",
+      "DRACO-PROVENANCE.md",
+      "DRACO-LICENSE.txt",
+      "CODEC-PROVENANCE.md",
+      "src/ktx2-basis-LICENSE.txt",
+      "src/ktx2-basis-README.md"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "elftia-plugin-rocut",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "private": true,
   "description": "Elftia app-extension packaging rocut as a host-managed Tool Host plus its agent skill, bundled CLI, wasm sibling, and prebuilt editor surface.",
   "license": "MIT",
@@ -15,6 +15,12 @@
     "verify:dist": "node scripts/verify-dist.mjs",
     "test": "vitest run",
     "smoke:agent-cli": "node scripts/smoke-agent-cli.mjs",
+    "test:portable-build": "node --test tests/portable-build-inputs.test.mjs tests/build-production-candidate.test.mjs",
+    "build:production": "node scripts/build-production-candidate.mjs",
+    "build:toolchain": "node scripts/prepare-production-toolchain.mjs",
+    "promote:production": "node scripts/promote-production-candidate.mjs",
+    "verify:production": "node scripts/promote-production-candidate.mjs --verify-only",
+    "test:production-atomic": "node --test tests/production-promotion-atomic.test.mjs",
     "pack": "elftia-plugin pack dist/rocut --out release",
     "release": "elftia-plugin release dist/rocut --out release",
     "verify": "npm test && npm run verify:vendor && npm run build && npm run verify:dist"

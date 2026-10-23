@@ -1,0 +1,1419 @@
+{
+  "consumer": "Rocut compileProgrammaticProject/bundleToSingleHtml with inline assets, media IDs and native audio FX",
+  "filePins": [
+    {
+      "path": "node_modules/@hyperframes/core/dist/audibleVideo.js",
+      "size": 664,
+      "sha256": "229d0b9b03316f6d8080e767beefc743f0de22c8d9337da3a627b53c815a3a5e"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/audioAutomation.js",
+      "size": 20624,
+      "sha256": "3c19d6cfcd81668bd2ac4e6c6111a9e978604e2705ea590e8d49f83bac5b43b0"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/audioFx.js",
+      "size": 27870,
+      "sha256": "b19d8d939714d36ba7402ac37a1f726cbee1282040e48c5d88729035879ee762"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/audioGain.js",
+      "size": 4530,
+      "sha256": "bc56f07798f834cfafc752f6e5dcd025b8340b3ead5e35b01863e2114c8f54b5"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/colorGrading.js",
+      "size": 40795,
+      "sha256": "428d82d1abfab26817408dca78d317804be17506eb2e018c4bca163dd580b6f3"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/colorGradingCurves.js",
+      "size": 6596,
+      "sha256": "2da248588670adc3536b858b9fe22f2f199b286d95d03a564a0159c6aade0fd9"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/colorLuts.js",
+      "size": 6869,
+      "sha256": "1ce69d323991b8d47ff033b80d75fc0fbfb53a17d3cab4980061d80df0cd030e"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/assetPaths.js",
+      "size": 214,
+      "sha256": "f6a0c2d4fb029cddb1465facd5cbed1634cf4a7be8b6f934687e2e34d9da11ef"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/compositionAssembly.js",
+      "size": 5361,
+      "sha256": "f5f07adfc8fb95b8c9091c4d388f0627e653d65ae05e4cee4668d4b2333bcbe1"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js",
+      "size": 27602,
+      "sha256": "bbbf9d43f4f713cade96e92a302e8a1eb36d5b3db2dfbeb11e7388980df4c6cc"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/externalScripts.js",
+      "size": 1786,
+      "sha256": "14d9cbcd5e341ae8c48f8e53716aaf7379a6681d3682e1711c51cbfc43d008c6"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "size": 58809,
+      "sha256": "273f377cf56d5da342a52ca65fe4515536d5adacfd3028d5a66c0190f5de3eec"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/htmlCompiler.js",
+      "size": 2921,
+      "sha256": "c5ed98ab6d2420964a3fcf0567caa2d16300e15b0c45951dfc57d16d033037e1"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/htmlDocument.js",
+      "size": 13795,
+      "sha256": "5bee56eb450b38c1d60258f80f9abda3af5d92672d617d29cf4783045fb8e366"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/htmlParityContract.js",
+      "size": 4690,
+      "sha256": "0c62b5c714d1c5ae20b6cb18913533146d3f6a868f1c8953bb109601e750f5f3"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/importMaps.js",
+      "size": 3008,
+      "sha256": "cbf7365258d4ed377150f712a0fe118d02a615d41a5461a830fac521744f5a16"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "size": 2567,
+      "sha256": "9a84e0bf36d9125f7d596621da3824db529a10825cec1784498975f4404549e0"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "size": 27052,
+      "sha256": "584bf0a244a4d7cf48e2865610f43215d7c0ac4b9099996ab758b6e8fd45a210"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/mediaRenderIds.js",
+      "size": 8005,
+      "sha256": "6b01a43acd71e612e484e79c88e7ce6b6bdb795d5d4056efaca08b01b2143c61"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/rewriteSubCompPaths.js",
+      "size": 254,
+      "sha256": "c1586ed818848b182d972902c420697e147265bfad181d9c77eafe8f02579d9b"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/scenePartsManifest.js",
+      "size": 1625,
+      "sha256": "a5221540c95cbb3f35a8240f05c87db3a35c38396c3fe245c9311e22efdee154"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/scriptRuns.js",
+      "size": 7595,
+      "sha256": "30f81435b98c3eb41ec96b9d222ab30e9584e1c21e0f50d3891fb4eb6025aa3f"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/selectorIdTokens.js",
+      "size": 13394,
+      "sha256": "ea736b3591b68d78554daa3fcca57cf2521d5b261a44165565b04e14771666c7"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/staticGuard.js",
+      "size": 1110,
+      "sha256": "c3b443579772a74a9598a9e66e62e8c4dfa39f02f0ab622db6defb696174e6c5"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/subCompositionValidity.js",
+      "size": 190,
+      "sha256": "5a7eeba09588a9a597f76f9354d9a47e4734573d57a87499b7286d19e5120a73"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/svgIdNamespacing.js",
+      "size": 18428,
+      "sha256": "5ae7231a367b721bc404b381ce8e16dc05e5f9bc61f61a95828fcb2011ed84f8"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/svgSelectorAliases.js",
+      "size": 9858,
+      "sha256": "d0415b08e19f2a62b0efa296248fc97fd08effc3300ac72fed11f9771b57ab2b"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/timingCompiler.js",
+      "size": 15005,
+      "sha256": "8e60529b2a345880655ff82b9f3a69d9852c26db33d546fa756dffa911e2bebb"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/compiler/timingResolver.js",
+      "size": 3666,
+      "sha256": "a1eade6384132fe70866efd9c2c05d907dcd9591991b27a037793d4270a65fc5"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/generated/audio-fx-runtime-inline.js",
+      "size": 39536,
+      "sha256": "cebd5b7d493763013ed2df44ec927fd7c7b85ea72c088604bfa8a305bd0accd2"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/generated/runtime-inline.js",
+      "size": 517432,
+      "sha256": "0b48ebba6b06538d432fc24b902473d3194aa023209f1ac36406b3b8d1ed2195"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/generated/svg-selector-aliases-inline.js",
+      "size": 7438,
+      "sha256": "3fb122685bfa18aaf144a4c24f8a97dcc0e33aff9923a4860c8e9c637e5198db"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/playbackRateBounds.js",
+      "size": 138,
+      "sha256": "43014d9bb92747d932ae4eacbe56d6990654f1e73fc280b2d82f2347b060467c"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/applyVariableBindings.js",
+      "size": 8043,
+      "sha256": "ea27b793f4398c2fdfb45a4f289b50b0462d59ac06c78bdbb547909adcf5464e"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/audioAutomationVolume.js",
+      "size": 2006,
+      "sha256": "e623e6038fbdc46358d9d738fe071f78daa1c588c7cc3552940c8643bad58d7c"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/domRealm.js",
+      "size": 4687,
+      "sha256": "8076395f2bb416988edf6f23e1de9dd01762ecb96b2e496b091c30b3848f784e"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/flattenedRoot.js",
+      "size": 1145,
+      "sha256": "a856d16541ddcec7c095571c2e7661c7b1a8dd168291522611610d7c063faf7f"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/getVariables.js",
+      "size": 12772,
+      "sha256": "24f8e3a1a311c7b792d1fcb578112809151cf044609b46f5a39fbdd2004f05d2"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/playbackRate.js",
+      "size": 3728,
+      "sha256": "b86659a4c312c3053a18f1c4e9ef5b053e0d1eb7765b919a9cce9a65b3855d0d"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/proxySrc.js",
+      "size": 314,
+      "sha256": "0cff7b2a4055c41a438e2882e1c30c4662e64e025706956652699edb80dbdd8d"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/startExpression.js",
+      "size": 758,
+      "sha256": "c71d8b7fb06984ef06323b1ef858d8ffdb7e670ae4c4ee40bb19d89ee35e12a8"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/runtime/variableScope.js",
+      "size": 940,
+      "sha256": "2d7619968692b5ca069ceba9f2e83aa699638306d6f2f55f6cfb52010f63b7cb"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/safePath.js",
+      "size": 6062,
+      "sha256": "0976438e018c121a18c6cc61c5dd1f51aabcfdf6aaa3d77ff5280f7ea5a955e6"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/sceneParts.js",
+      "size": 296,
+      "sha256": "88603b82f837b7ec1c17700251f0f533dca38ee9633cc696bd0e85c41d78b442"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/speedRamp.js",
+      "size": 6773,
+      "sha256": "7404ddd4a12c6dc8663367eb4a171e5ffd497d9eb5c3a63f21cd0ff83a8f9920"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/tokenSlug.js",
+      "size": 1617,
+      "sha256": "dac18397cb376755e90fc3b03037262e07550cfe079c35f66a08c57efc77f432"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/dist/utils/cssSelector.js",
+      "size": 438,
+      "sha256": "9a5ba6e8a7b1f37e950d4108fcd540ba1595c0549180da79f90a5765d9ba1273"
+    },
+    {
+      "path": "node_modules/@hyperframes/core/node_modules/esbuild/lib/main.js",
+      "size": 88706,
+      "sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1"
+    },
+    {
+      "path": "node_modules/@hyperframes/lint/dist/index.js",
+      "size": 322344,
+      "sha256": "8a49cd21381ae9998a28c306b68892cd3356b6be640266119da29a960d697540"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/assetResolution.js",
+      "size": 5939,
+      "sha256": "01a28c213f2fa2f41ce9c09cbc0b06a4f352c537d0c76ea7ae0a17818ac003ff"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/assets.js",
+      "size": 3124,
+      "sha256": "0081dd7cb5ed9b2439cfb811f10de147bf7d7a992f6885dd3d9f0bc6e75fca8c"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/colorGradingContract.js",
+      "size": 17824,
+      "sha256": "848210f314e68e862a40fa4524903a72fff649b037564cf9b7c018e95086b1e8"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/composition.js",
+      "size": 26436,
+      "sha256": "b3489f21eccf8304b319d983441cc45b65fb51acf023980a2e0cc322a5f2c708"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/compositionContract.js",
+      "size": 11721,
+      "sha256": "e24da0d2bf59d0a44a64d08f4c5347cddcd19ae4cd336ebb932eba970dbbc2dd"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/compositionDuration.js",
+      "size": 923,
+      "sha256": "fcd000f0c700fc273a7b32dafd69cf48b0e19c85e9ac4e586323cf0924720ab7"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/ffBinaries.js",
+      "size": 3727,
+      "sha256": "26f50f7bc93e33c8a81e698f81abc555030be1e21fd50fb586a36cb910ca18c5"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/gsapParserAcorn.js",
+      "size": 77334,
+      "sha256": "26c38af4bce4051128d4148b3c3fecff155ffd720839aad81fac44e72c51bd08"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/hfIds.js",
+      "size": 3478,
+      "sha256": "9db2b8c0c4671f5296b7e60d6b10ab0471d77a2917cb50cb7b56773bbc0f4b38"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/mediaDuration.js",
+      "size": 3990,
+      "sha256": "7f683969a164279032101f460d5dfb7800e595a2c2b1b773d615d8e5a437d1d9"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/slideshow.js",
+      "size": 5715,
+      "sha256": "a2c3a0f514d4ff60bf4a45d793d45fadaba95f88f277f555e7a38c7aadf656d1"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/subCompositionValidity.js",
+      "size": 1740,
+      "sha256": "d53990a10da7c8ba00bcfd20b9d914b2b01017a4564bcecbf49dce5c88335e9a"
+    },
+    {
+      "path": "node_modules/@hyperframes/parsers/dist/topLevelElements.js",
+      "size": 1728,
+      "sha256": "0eb2ebf606436ccfdd86b9d8f36f1ea626a6c6868f3db933bdeeeb565e7228cd"
+    }
+  ],
+  "edges": [
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./timingResolver.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/compiler/timingResolver.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./timingCompiler.js",
+      "kind": "static",
+      "line": 5,
+      "to": "node_modules/@hyperframes/core/dist/compiler/timingCompiler.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./htmlCompiler.js",
+      "kind": "static",
+      "line": 7,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlCompiler.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./htmlBundler.js",
+      "kind": "static",
+      "line": 9,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "../runtime/getVariables.js",
+      "kind": "static",
+      "line": 10,
+      "to": "node_modules/@hyperframes/core/dist/runtime/getVariables.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./htmlParityContract.js",
+      "kind": "static",
+      "line": 11,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlParityContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./htmlDocument.js",
+      "kind": "static",
+      "line": 12,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlDocument.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./scenePartsManifest.js",
+      "kind": "static",
+      "line": 13,
+      "to": "node_modules/@hyperframes/core/dist/compiler/scenePartsManifest.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./scriptRuns.js",
+      "kind": "static",
+      "line": 15,
+      "to": "node_modules/@hyperframes/core/dist/compiler/scriptRuns.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./staticGuard.js",
+      "kind": "static",
+      "line": 17,
+      "to": "node_modules/@hyperframes/core/dist/compiler/staticGuard.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./compositionScoping.js",
+      "kind": "static",
+      "line": 19,
+      "to": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./inlineSubCompositions.js",
+      "kind": "static",
+      "line": 21,
+      "to": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./subCompositionValidity.js",
+      "kind": "static",
+      "line": 25,
+      "to": "node_modules/@hyperframes/core/dist/compiler/subCompositionValidity.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./assetPaths.js",
+      "kind": "static",
+      "line": 27,
+      "to": "node_modules/@hyperframes/core/dist/compiler/assetPaths.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./mediaRenderIds.js",
+      "kind": "static",
+      "line": 28,
+      "to": "node_modules/@hyperframes/core/dist/compiler/mediaRenderIds.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./externalScripts.js",
+      "kind": "static",
+      "line": 29,
+      "to": "node_modules/@hyperframes/core/dist/compiler/externalScripts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/index.js",
+      "value": "./importMaps.js",
+      "kind": "static",
+      "line": 30,
+      "to": "node_modules/@hyperframes/core/dist/compiler/importMaps.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlDocument.js",
+      "value": "linkedom",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/linkedom/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/mediaRenderIds.js",
+      "value": "../audibleVideo.js",
+      "kind": "static",
+      "line": 27,
+      "to": "node_modules/@hyperframes/core/dist/audibleVideo.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/timingCompiler.js",
+      "value": "@hyperframes/parsers/composition-contract",
+      "kind": "static",
+      "line": 20,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/timingCompiler.js",
+      "value": "../runtime/playbackRate.js",
+      "kind": "static",
+      "line": 21,
+      "to": "node_modules/@hyperframes/core/dist/runtime/playbackRate.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlCompiler.js",
+      "value": "path",
+      "kind": "static",
+      "line": 1,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlCompiler.js",
+      "value": "./timingCompiler.js",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/core/dist/compiler/timingCompiler.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./scriptRuns.js",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/core/dist/compiler/scriptRuns.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../sceneParts.js",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/core/dist/sceneParts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./externalScripts.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/compiler/externalScripts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./importMaps.js",
+      "kind": "static",
+      "line": 4,
+      "to": "node_modules/@hyperframes/core/dist/compiler/importMaps.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../runtime/flattenedRoot.js",
+      "kind": "static",
+      "line": 5,
+      "to": "node_modules/@hyperframes/core/dist/runtime/flattenedRoot.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../runtime/flattenedRoot.js",
+      "kind": "static",
+      "line": 6,
+      "to": "node_modules/@hyperframes/core/dist/runtime/flattenedRoot.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../runtime/getVariables.js",
+      "kind": "static",
+      "line": 7,
+      "to": "node_modules/@hyperframes/core/dist/runtime/getVariables.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../runtime/applyVariableBindings.js",
+      "kind": "static",
+      "line": 8,
+      "to": "node_modules/@hyperframes/core/dist/runtime/applyVariableBindings.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../tokenSlug.js",
+      "kind": "static",
+      "line": 9,
+      "to": "node_modules/@hyperframes/core/dist/tokenSlug.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "async_hooks",
+      "kind": "static",
+      "line": 10,
+      "to": "node:async_hooks"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "fs",
+      "kind": "static",
+      "line": 11,
+      "to": "node:fs"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "path",
+      "kind": "static",
+      "line": 12,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./assetPaths.js",
+      "kind": "static",
+      "line": 13,
+      "to": "node_modules/@hyperframes/core/dist/compiler/assetPaths.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "esbuild",
+      "kind": "static",
+      "line": 14,
+      "to": "node_modules/@hyperframes/core/node_modules/esbuild/lib/main.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./htmlCompiler.js",
+      "kind": "static",
+      "line": 15,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlCompiler.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./htmlDocument.js",
+      "kind": "static",
+      "line": 16,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlDocument.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./compositionScoping.js",
+      "kind": "static",
+      "line": 18,
+      "to": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./staticGuard.js",
+      "kind": "static",
+      "line": 19,
+      "to": "node_modules/@hyperframes/core/dist/compiler/staticGuard.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../generated/runtime-inline.js",
+      "kind": "static",
+      "line": 20,
+      "to": "node_modules/@hyperframes/core/dist/generated/runtime-inline.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../runtime/getVariables.js",
+      "kind": "static",
+      "line": 21,
+      "to": "node_modules/@hyperframes/core/dist/runtime/getVariables.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "./inlineSubCompositions.js",
+      "kind": "static",
+      "line": 22,
+      "to": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../utils/cssSelector.js",
+      "kind": "static",
+      "line": 23,
+      "to": "node_modules/@hyperframes/core/dist/utils/cssSelector.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../safePath.js",
+      "kind": "static",
+      "line": 24,
+      "to": "node_modules/@hyperframes/core/dist/safePath.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "@hyperframes/parsers/hf-ids",
+      "kind": "static",
+      "line": 25,
+      "to": "node_modules/@hyperframes/parsers/dist/hfIds.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlBundler.js",
+      "value": "../colorGrading.js",
+      "kind": "static",
+      "line": 26,
+      "to": "node_modules/@hyperframes/core/dist/colorGrading.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/getVariables.js",
+      "value": "../tokenSlug.js",
+      "kind": "static",
+      "line": 22,
+      "to": "node_modules/@hyperframes/core/dist/tokenSlug.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/htmlParityContract.js",
+      "value": "linkedom",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/linkedom/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/scenePartsManifest.js",
+      "value": "node:crypto",
+      "kind": "static",
+      "line": 1,
+      "to": "node:crypto"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/scenePartsManifest.js",
+      "value": "../sceneParts.js",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/core/dist/sceneParts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/scenePartsManifest.js",
+      "value": "./htmlDocument.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/compiler/htmlDocument.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/staticGuard.js",
+      "value": "@hyperframes/lint",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/lint/dist/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js",
+      "value": "../generated/svg-selector-aliases-inline.js",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/core/dist/generated/svg-selector-aliases-inline.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js",
+      "value": "postcss",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/postcss/lib/postcss.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js",
+      "value": "./selectorIdTokens.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/compiler/selectorIdTokens.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js",
+      "value": "../sceneParts.js",
+      "kind": "static",
+      "line": 4,
+      "to": "node_modules/@hyperframes/core/dist/sceneParts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./svgSelectorAliases.js",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/core/dist/compiler/svgSelectorAliases.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./externalScripts.js",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/core/dist/compiler/externalScripts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./importMaps.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/compiler/importMaps.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./scriptRuns.js",
+      "kind": "static",
+      "line": 4,
+      "to": "node_modules/@hyperframes/core/dist/compiler/scriptRuns.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./rewriteSubCompPaths.js",
+      "kind": "static",
+      "line": 14,
+      "to": "node_modules/@hyperframes/core/dist/compiler/rewriteSubCompPaths.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "../runtime/getVariables.js",
+      "kind": "static",
+      "line": 15,
+      "to": "node_modules/@hyperframes/core/dist/runtime/getVariables.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./compositionScoping.js",
+      "kind": "static",
+      "line": 16,
+      "to": "node_modules/@hyperframes/core/dist/compiler/compositionScoping.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./svgIdNamespacing.js",
+      "kind": "static",
+      "line": 17,
+      "to": "node_modules/@hyperframes/core/dist/compiler/svgIdNamespacing.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "@hyperframes/parsers/sub-composition-validity",
+      "kind": "static",
+      "line": 18,
+      "to": "node_modules/@hyperframes/parsers/dist/subCompositionValidity.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "./compositionAssembly.js",
+      "kind": "static",
+      "line": 19,
+      "to": "node_modules/@hyperframes/core/dist/compiler/compositionAssembly.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/inlineSubCompositions.js",
+      "value": "../sceneParts.js",
+      "kind": "static",
+      "line": 20,
+      "to": "node_modules/@hyperframes/core/dist/sceneParts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/subCompositionValidity.js",
+      "value": "@hyperframes/parsers/sub-composition-validity",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/parsers/dist/subCompositionValidity.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/assetPaths.js",
+      "value": "@hyperframes/parsers/asset-paths",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/parsers/dist/assets.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/playbackRate.js",
+      "value": "@hyperframes/parsers/media-duration",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/parsers/dist/mediaDuration.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/playbackRate.js",
+      "value": "../speedRamp.js",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/core/dist/speedRamp.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/playbackRate.js",
+      "value": "./domRealm.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/runtime/domRealm.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/playbackRate.js",
+      "value": "./startExpression.js",
+      "kind": "static",
+      "line": 4,
+      "to": "node_modules/@hyperframes/core/dist/runtime/startExpression.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/applyVariableBindings.js",
+      "value": "./variableScope.js",
+      "kind": "static",
+      "line": 29,
+      "to": "node_modules/@hyperframes/core/dist/runtime/variableScope.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/applyVariableBindings.js",
+      "value": "@hyperframes/parsers/composition",
+      "kind": "static",
+      "line": 30,
+      "to": "node_modules/@hyperframes/parsers/dist/composition.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/applyVariableBindings.js",
+      "value": "./domRealm.js",
+      "kind": "static",
+      "line": 31,
+      "to": "node_modules/@hyperframes/core/dist/runtime/domRealm.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/applyVariableBindings.js",
+      "value": "./proxySrc.js",
+      "kind": "static",
+      "line": 32,
+      "to": "node_modules/@hyperframes/core/dist/runtime/proxySrc.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/safePath.js",
+      "value": "node:path",
+      "kind": "static",
+      "line": 1,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/safePath.js",
+      "value": "node:fs",
+      "kind": "static",
+      "line": 2,
+      "to": "node:fs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/hfIds.js",
+      "value": "linkedom",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/linkedom/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/colorGrading.js",
+      "value": "./colorLuts.js",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/core/dist/colorLuts.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/colorGrading.js",
+      "value": "@hyperframes/parsers/color-grading-contract",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/parsers/dist/colorGradingContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/colorGrading.js",
+      "value": "./colorGradingCurves.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/colorGradingCurves.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "htmlparser2",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/htmlparser2/dist/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "htmlparser2",
+      "kind": "static",
+      "line": 5,
+      "to": "node_modules/htmlparser2/dist/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "acorn",
+      "kind": "static",
+      "line": 6,
+      "to": "node_modules/acorn/dist/acorn.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "postcss",
+      "kind": "static",
+      "line": 744,
+      "to": "node_modules/postcss/lib/postcss.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "postcss-selector-parser",
+      "kind": "static",
+      "line": 745,
+      "to": "node_modules/postcss-selector-parser/dist/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition",
+      "kind": "static",
+      "line": 746,
+      "to": "node_modules/@hyperframes/parsers/dist/composition.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/color-grading-contract",
+      "kind": "static",
+      "line": 1529,
+      "to": "node_modules/@hyperframes/parsers/dist/colorGradingContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition",
+      "kind": "static",
+      "line": 1530,
+      "to": "node_modules/@hyperframes/parsers/dist/composition.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "linkedom",
+      "kind": "static",
+      "line": 1531,
+      "to": "node_modules/linkedom/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "acorn",
+      "kind": "static",
+      "line": 2474,
+      "to": "node_modules/acorn/dist/acorn.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "acorn-walk",
+      "kind": "static",
+      "line": 2475,
+      "to": "node_modules/acorn-walk/dist/walk.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition",
+      "kind": "static",
+      "line": 2513,
+      "to": "node_modules/@hyperframes/parsers/dist/composition.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition-contract",
+      "kind": "static",
+      "line": 2514,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition-duration",
+      "kind": "static",
+      "line": 2515,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionDuration.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/media-duration",
+      "kind": "static",
+      "line": 2516,
+      "to": "node_modules/@hyperframes/parsers/dist/mediaDuration.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/gsap-parser-acorn",
+      "kind": "dynamic-literal",
+      "line": 3683,
+      "to": "node_modules/@hyperframes/parsers/dist/gsapParserAcorn.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/gsap-parser-acorn",
+      "kind": "dynamic-literal",
+      "line": 3687,
+      "to": "node_modules/@hyperframes/parsers/dist/gsapParserAcorn.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "postcss",
+      "kind": "static",
+      "line": 5666,
+      "to": "node_modules/postcss/lib/postcss.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "postcss",
+      "kind": "static",
+      "line": 5843,
+      "to": "node_modules/postcss/lib/postcss.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition",
+      "kind": "static",
+      "line": 5844,
+      "to": "node_modules/@hyperframes/parsers/dist/composition.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/slideshow",
+      "kind": "static",
+      "line": 6032,
+      "to": "node_modules/@hyperframes/parsers/dist/slideshow.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/top-level-elements",
+      "kind": "static",
+      "line": 6102,
+      "to": "node_modules/@hyperframes/parsers/dist/topLevelElements.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition-contract",
+      "kind": "static",
+      "line": 6107,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/media-duration",
+      "kind": "static",
+      "line": 6108,
+      "to": "node_modules/@hyperframes/parsers/dist/mediaDuration.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition-duration",
+      "kind": "static",
+      "line": 6109,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionDuration.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "crypto",
+      "kind": "static",
+      "line": 6430,
+      "to": "node:crypto"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "fs",
+      "kind": "static",
+      "line": 6431,
+      "to": "node:fs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "path",
+      "kind": "static",
+      "line": 6432,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/asset-paths",
+      "kind": "static",
+      "line": 6433,
+      "to": "node_modules/@hyperframes/parsers/dist/assets.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/sub-composition-validity",
+      "kind": "static",
+      "line": 6434,
+      "to": "node_modules/@hyperframes/parsers/dist/subCompositionValidity.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "linkedom",
+      "kind": "static",
+      "line": 6435,
+      "to": "node_modules/linkedom/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/asset-resolution",
+      "kind": "static",
+      "line": 6436,
+      "to": "node_modules/@hyperframes/parsers/dist/assetResolution.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "child_process",
+      "kind": "static",
+      "line": 6450,
+      "to": "node:child_process"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "fs",
+      "kind": "static",
+      "line": 6451,
+      "to": "node:fs"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "path",
+      "kind": "static",
+      "line": 6452,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/asset-paths",
+      "kind": "static",
+      "line": 6453,
+      "to": "node_modules/@hyperframes/parsers/dist/assets.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/composition-contract",
+      "kind": "static",
+      "line": 6454,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/ff-binaries",
+      "kind": "static",
+      "line": 6455,
+      "to": "node_modules/@hyperframes/parsers/dist/ffBinaries.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "@hyperframes/parsers/asset-resolution",
+      "kind": "static",
+      "line": 6456,
+      "to": "node_modules/@hyperframes/parsers/dist/assetResolution.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/lint/dist/index.js",
+      "value": "linkedom",
+      "kind": "static",
+      "line": 6463,
+      "to": "node_modules/linkedom/esm/index.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/svgSelectorAliases.js",
+      "value": "./selectorIdTokens.js",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/core/dist/compiler/selectorIdTokens.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/rewriteSubCompPaths.js",
+      "value": "@hyperframes/parsers/asset-paths",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/parsers/dist/assets.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/svgIdNamespacing.js",
+      "value": "postcss",
+      "kind": "static",
+      "line": 8,
+      "to": "node_modules/postcss/lib/postcss.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/svgIdNamespacing.js",
+      "value": "./selectorIdTokens.js",
+      "kind": "static",
+      "line": 9,
+      "to": "node_modules/@hyperframes/core/dist/compiler/selectorIdTokens.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/compiler/svgIdNamespacing.js",
+      "value": "./svgSelectorAliases.js",
+      "kind": "static",
+      "line": 10,
+      "to": "node_modules/@hyperframes/core/dist/compiler/svgSelectorAliases.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/assets.js",
+      "value": "path",
+      "kind": "static",
+      "line": 2,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/assets.js",
+      "value": "path",
+      "kind": "static",
+      "line": 17,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/speedRamp.js",
+      "value": "./audioAutomation.js",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/@hyperframes/core/dist/audioAutomation.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/speedRamp.js",
+      "value": "./runtime/audioAutomationVolume.js",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/@hyperframes/core/dist/runtime/audioAutomationVolume.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/speedRamp.js",
+      "value": "./playbackRateBounds.js",
+      "kind": "static",
+      "line": 4,
+      "to": "node_modules/@hyperframes/core/dist/playbackRateBounds.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/startExpression.js",
+      "value": "@hyperframes/parsers/composition-contract",
+      "kind": "static",
+      "line": 14,
+      "to": "node_modules/@hyperframes/parsers/dist/compositionContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/composition.js",
+      "value": "acorn",
+      "kind": "static",
+      "line": 261,
+      "to": "node_modules/acorn/dist/acorn.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/composition.js",
+      "value": "acorn-walk",
+      "kind": "static",
+      "line": 262,
+      "to": "node_modules/acorn-walk/dist/walk.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/composition.js",
+      "value": "acorn",
+      "kind": "static",
+      "line": 652,
+      "to": "node_modules/acorn/dist/acorn.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/composition.js",
+      "value": "acorn-walk",
+      "kind": "static",
+      "line": 653,
+      "to": "node_modules/acorn-walk/dist/walk.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/colorGradingCurves.js",
+      "value": "@hyperframes/parsers/color-grading-contract",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/parsers/dist/colorGradingContract.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/gsapParserAcorn.js",
+      "value": "acorn",
+      "kind": "static",
+      "line": 2,
+      "to": "node_modules/acorn/dist/acorn.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/gsapParserAcorn.js",
+      "value": "acorn-walk",
+      "kind": "static",
+      "line": 3,
+      "to": "node_modules/acorn-walk/dist/walk.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/gsapParserAcorn.js",
+      "value": "acorn",
+      "kind": "static",
+      "line": 627,
+      "to": "node_modules/acorn/dist/acorn.mjs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/assetResolution.js",
+      "value": "fs",
+      "kind": "static",
+      "line": 2,
+      "to": "node:fs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/assetResolution.js",
+      "value": "path",
+      "kind": "static",
+      "line": 3,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/ffBinaries.js",
+      "value": "child_process",
+      "kind": "static",
+      "line": 2,
+      "to": "node:child_process"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/ffBinaries.js",
+      "value": "fs",
+      "kind": "static",
+      "line": 3,
+      "to": "node:fs"
+    },
+    {
+      "from": "node_modules/@hyperframes/parsers/dist/ffBinaries.js",
+      "value": "path",
+      "kind": "static",
+      "line": 4,
+      "to": "node:path"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/audioAutomation.js",
+      "value": "./audioFx.js",
+      "kind": "static",
+      "line": 13,
+      "to": "node_modules/@hyperframes/core/dist/audioFx.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/audioAutomation.js",
+      "value": "./audioGain.js",
+      "kind": "static",
+      "line": 14,
+      "to": "node_modules/@hyperframes/core/dist/audioGain.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/audioAutomation.js",
+      "value": "./playbackRateBounds.js",
+      "kind": "static",
+      "line": 15,
+      "to": "node_modules/@hyperframes/core/dist/playbackRateBounds.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/runtime/audioAutomationVolume.js",
+      "value": "../audioAutomation.js",
+      "kind": "static",
+      "line": 10,
+      "to": "node_modules/@hyperframes/core/dist/audioAutomation.js"
+    },
+    {
+      "from": "node_modules/@hyperframes/core/dist/playbackRateBounds.js",
+      "value": "@hyperframes/parsers/media-duration",
+      "kind": "static",
+      "line": 1,
+      "to": "node_modules/@hyperframes/parsers/dist/mediaDuration.js"
+    }
+  ],
+  "bareImports": [
+    "@hyperframes/lint",
+    "@hyperframes/parsers/asset-paths",
+    "@hyperframes/parsers/asset-resolution",
+    "@hyperframes/parsers/color-grading-contract",
+    "@hyperframes/parsers/composition",
+    "@hyperframes/parsers/composition-contract",
+    "@hyperframes/parsers/composition-duration",
+    "@hyperframes/parsers/ff-binaries",
+    "@hyperframes/parsers/gsap-parser-acorn",
+    "@hyperframes/parsers/hf-ids",
+    "@hyperframes/parsers/media-duration",
+    "@hyperframes/parsers/slideshow",
+    "@hyperframes/parsers/sub-composition-validity",
+    "@hyperframes/parsers/top-level-elements",
+    "acorn",
+    "acorn-walk",
+    "esbuild",
+    "htmlparser2",
+    "linkedom",
+    "postcss",
+    "postcss-selector-parser"
+  ],
+  "nonLiteralDynamic": []
+}

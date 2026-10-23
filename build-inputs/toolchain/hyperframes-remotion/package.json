@@ -1,0 +1,15 @@
+{
+  "name": "rocut-electron-media-isolated-toolchain",
+  "version": "1.0.0",
+  "dependencies": {
+    "@hyperframes/core": "0.8.139",
+    "acorn": "8.19.0",
+    "esbuild": "0.27.3",
+    "gsap": "3.15.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.440"
+  },
+  "private": true,
+  "type": "module"
+}

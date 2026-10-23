@@ -1,0 +1,56 @@
+[
+  {
+    "name": "@hyperframes/core",
+    "version": "0.8.139",
+    "license": "Apache-2.0",
+    "noticePath": "LICENSE",
+    "sha256": "4259155fb06f127687ee7b0a8a3682d45132db0f2da26cbc0b7a2d1e796436b8",
+    "sourceFile": "notices/apache-2.0.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/heygen-com/hyperframes/main/LICENSE"
+  },
+  {
+    "name": "remotion",
+    "version": "4.0.440",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "noticePath": "LICENSE.md",
+    "sha256": "bd65083b940f61904f6ef298aade918a7cad72a3e35bc406e36fab365844b673",
+    "sourceFile": "notices/remotion-4.0.440-LICENSE.md",
+    "sourceUrl": "https://raw.githubusercontent.com/remotion-dev/remotion/v4.0.440/LICENSE.md"
+  },
+  {
+    "name": "bpm-detective",
+    "version": "2.0.5",
+    "license": "MIT",
+    "noticePath": "NOTICE-upstream-README.md",
+    "sha256": "a4549400ca509737b7ccf74a896d7b7789b96efb4568a48b1d66e6b92def7ae1",
+    "sourceFile": "notices/bpm-detective-2.0.5-README.md",
+    "sourceUrl": "https://raw.githubusercontent.com/tornqvist/bpm-detective/0dea3dbbb4dfc6e4dbabf6f9afc0e4cc1bd9bf74/README.md"
+  },
+  {
+    "name": "@hyperframes/lint",
+    "version": "0.8.139",
+    "license": "Apache-2.0",
+    "noticePath": "LICENSE",
+    "sha256": "4259155fb06f127687ee7b0a8a3682d45132db0f2da26cbc0b7a2d1e796436b8",
+    "sourceFile": "notices/apache-2.0.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/heygen-com/hyperframes/main/LICENSE"
+  },
+  {
+    "name": "@hyperframes/parsers",
+    "version": "0.8.139",
+    "license": "Apache-2.0",
+    "noticePath": "LICENSE",
+    "sha256": "4259155fb06f127687ee7b0a8a3682d45132db0f2da26cbc0b7a2d1e796436b8",
+    "sourceFile": "notices/apache-2.0.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/heygen-com/hyperframes/main/LICENSE"
+  },
+  {
+    "name": "@hyperframes/studio-server",
+    "version": "0.8.139",
+    "license": "Apache-2.0",
+    "noticePath": "LICENSE",
+    "sha256": "4259155fb06f127687ee7b0a8a3682d45132db0f2da26cbc0b7a2d1e796436b8",
+    "sourceFile": "notices/apache-2.0.txt",
+    "sourceUrl": "https://raw.githubusercontent.com/heygen-com/hyperframes/main/LICENSE"
+  }
+]

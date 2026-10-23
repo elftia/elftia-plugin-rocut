@@ -1,9 +1,11 @@
 ---
 name: rocut-studio
-description: Drive the rocut video editor through its bundled CLI — start or join a local backend host, show its authenticated editor URL in the user's workspace Web Pane, edit timeline entities and Rust-planned motion text through revision-checked commands, verify structurally by re-reading, export through the user's open editor pane, and rely on the project directory as the single source of truth. Use whenever the user wants to create or edit a video project, timeline, motion typography, lyrics, tracks, clips, markers, or project settings in rocut.
+description: Drive Rocut through its bundled CLI and Creator Host production tools: prepare the native runtime, edit revision-checked timeline entities and Rust-planned motion text, capture actual frames and export with the Host-managed renderer. Use for video projects, motion typography, lyrics, tracks, clips, markers and project settings. Standalone CLI export requires an attached rendering surface.
 ---
 
 # rocut video editor (via the rocut CLI)
+
+In a Creator Studio session, use `initialize_production` to prepare the registered native Host and its hidden renderer. Use `capture_representative` for revision-pinned frames and `production_plan_rocut` / `production_start` for short exports. These routes own their rendering surface; no user Chrome connection or manual editor click is needed. If these capabilities are unavailable, report the installation gap and keep the representative gate incomplete. The standalone CLI surface instructions below apply only outside that Host route.
 
 You operate rocut through its CLI — the sole automation surface rocut ships
 (rocut deliberately ships no MCP). The user watches in the live editor; you
@@ -378,21 +380,18 @@ Blocks until the render settles, prints progress to stderr, and writes JSON to
 stdout with `status`, `hostPath` (inside the project's `exports/`) and, when
 `--out` was given, `outputPath`.
 
-**THE PANE MUST BE OPEN.** This is not a caveat to work around — it is how
-export works here. Rendering needs a GPU graphics stack (a 2D canvas context,
-WebGL for the compositor, WebCodecs for the encoder) and the host is a plain
-Node process that has none of them. So the host directs the editor pane the
-user already has open, and the pane renders. With no pane attached the command
-fails immediately and says so:
+Rendering requires an attached surface (canvas, WebGL and WebCodecs). Creator
+Host production prepares a hidden surface automatically. A standalone CLI host
+requires its own attached editor; without one the CLI fails:
 
 ```
 POST /export failed (409): no editor pane is attached to this host, so there is
 no renderer to export with — open the project's editor URL and retry
 ```
 
-When you hit that, do not retry in a loop and do not report a broken export.
-Show the user the `editorUrl` from `host ensure` and ask them
-to open it, then run the command again.
+In Creator, use the Host production route and preserve the failed receipt.
+Do not probe user Chrome or skip review. In a standalone CLI session, attach
+that project's editor URL before retrying. Never retry in a loop.
 
 Consequences worth knowing:
 
@@ -417,7 +416,7 @@ node "$CLI" snapshot --tick 120000 --out ./frame.png --target "$TARGET"
 ```
 
 Supply an explicit nonnegative integer tick (120000 ticks per second), within
-the project's last frame time. The project's editor pane must be attached;
+the project's last frame time. A rendering surface must be attached;
 the host selects one matching surface, or use `--surface` if several qualify.
 The command fixes the project revision before capture and does not edit the
 timeline. Use `--revision` to require the revision you just read.
@@ -429,7 +428,8 @@ This is rendered PNG delivery, unlike the structural digest from `verify`.
 Default snapshots use the timeline's opaque background; do not promise a
 transparent PNG mode. Check the delivered file before claiming success.
 If `snapshot` is unknown, the installed plugin needs an update. If no matching
-pane is attached, open that project's editor rather than retrying in a loop.
+surface is attached, use Creator's `capture_representative` to prepare its hidden
+surface; standalone callers attach their own editor. Do not retry in a loop.
 For revision conflicts, re-read and confirm the intended revision before retry.
 
 ## Drafts (review-before-commit)

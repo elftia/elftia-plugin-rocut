@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 const exec = promisify(execFile);
-const entry = fileURLToPath(new URL("../vendor/run/rocut.mjs", import.meta.url));
+const entryFlag = process.argv.indexOf("--entry");
+const entry = entryFlag < 0 ? fileURLToPath(new URL("../vendor/run/rocut.mjs", import.meta.url)) : process.argv[entryFlag + 1];
+assert.ok(typeof entry === "string" && path.isAbsolute(entry), "--entry requires an absolute candidate CLI path");
 const root = await mkdtemp(path.join(tmpdir(), "rocut-bundled-agent-"));
 const targets = path.join(root, "registry");
 const project = path.join(root, "mv");

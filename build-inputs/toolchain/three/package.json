@@ -1,0 +1,12 @@
+{
+  "name": "rocut-three-toolchain-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "@elftia/three-assets": "file:../three-assets/elftia-three-assets-0.1.1.tgz",
+    "@noble/hashes": "2.0.1",
+    "esbuild": "0.27.3",
+    "three": "0.185.1"
+  },
+  "private": true,
+  "type": "module"
+}

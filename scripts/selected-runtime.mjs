@@ -83,7 +83,9 @@ export async function prepareSelectedSources(repoRoot, options) {
   const rewritten = await rewriteAssetManifest(path.join(vendor, "surface"), placeholder);
   const notice = normalizeDeliveryBytes(await readFile(path.join(repoRoot, "licenses", "NOTICE.md")));
   assertMotionTextFontNotice(rewritten.manifest, notice.toString("utf8"));
-  await copy(path.join(repoRoot, "vendor", "LICENSE"), path.join(vendor, "LICENSE"));
+  const licenseFile = options.licenseFile ?? path.join(repoRoot, "vendor", "LICENSE");
+  assert(path.isAbsolute(licenseFile), "explicit upstream license must be an absolute file");
+  await copy(licenseFile, path.join(vendor, "LICENSE"));
   await writeFile(path.join(vendor, "NOTICE.md"), notice);
   assert(!(options.toolchainDir && options.toolchainSources), "choose toolchainDir or toolchainSources");
   let toolchain = null;
@@ -116,7 +118,7 @@ export async function prepareSelectedSources(repoRoot, options) {
     }
   }
   const entries = await inventoryVendorTree(vendor);
-  const facts = { mode: "explicit-selected-production-artifacts-not-pin-only", repoHead: selected.manifest.repoHead, dirty: selected.manifest.dirty, sourcePins, deliveryNormalizations, manifestProjection, runtimeManifestSha256: sha256(await readFile(options.packManifest)), runtime: selected.runtime, surfaceInput: surface.entries, brandingSubstitution: sha256(placeholder), surfaceManifestRewrite: rewritten, toolchain };
+  const facts = { mode: "explicit-selected-production-artifacts-not-pin-only", repoHead: selected.manifest.repoHead, dirty: selected.manifest.dirty, sourcePins, deliveryNormalizations, manifestProjection, upstreamLicenseSha256: sha256(await readFile(licenseFile)), runtimeManifestSha256: sha256(await readFile(options.packManifest)), runtime: selected.runtime, surfaceInput: surface.entries, brandingSubstitution: sha256(placeholder), surfaceManifestRewrite: rewritten, toolchain };
   await writeFile(path.join(vendor, "PROVENANCE.md"), `# Selected production artifact provenance\n\nNot a pin-only source build. Current producer manifest/main/skills and explicitly selected production runtime/Surface; the unchanged upstream.json default pin is not claimed to reproduce these bytes.\n\n${JSON.stringify(facts, null, 2)}\n\n## SHA-256 manifest\n\n${entries.length} files.\n\n\`\`\`\n${entries.map(e => `${e.sha256}  ${e.path}`).join("\n")}\n\`\`\`\n`);
   return { sourceRoot, facts };
 }

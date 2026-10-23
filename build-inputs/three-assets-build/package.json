@@ -1,0 +1,11 @@
+{
+  "name": "rocut-three-assets-build",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "@types/three": "0.185.1",
+    "@types/node": "24.3.0",
+    "three": "0.185.1"
+  }
+}
