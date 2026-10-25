@@ -1,0 +1,26 @@
+Offline media decoder redistribution
+
+FFmpeg n8.1.3-24-g92611900bb (2026-10-23), LGPL-3.0-or-later.
+Copyright (c) 2000-2026 the FFmpeg developers and respective library authors.
+The plugin wrapper remains MIT; the decoder and its libraries retain their own licenses.
+See LICENSE.txt and build-configuration.txt. This is the LGPL shared variant;
+GPL-only x264/x265 and nonfree components are disabled. No decoder bytes were modified.
+
+Binary publisher: https://github.com/BtbN/FFmpeg-Builds
+Build revision: 937868360a21d711ec94a33f5591d345ad9b7754
+FFmpeg source revision: 92611900bb112123e9bf997fdcc2d78e4c4922fc
+The exact FFmpeg source and upstream build-recipe archives accompany this directory.
+The build recipe includes dependency source locations, versions, patches and build scripts.
+Sources are also available from https://github.com/FFmpeg/FFmpeg and
+https://github.com/BtbN/FFmpeg-Builds at the revisions above.
+
+The complete original upstream binary ZIP is retained in the producer repository's
+build-inputs/offline-decoders directory, together with its pinned SHA-256 provenance.
+Package assembly verifies that local archive and needs no live nightly URL or PATH.
+Assembly reproducibility means byte-exact projection from these archived build inputs;
+it does not claim a fresh compiler run reproduces upstream executable bytes.
+
+The decoder is a separate executable with replaceable shared libraries. This plugin
+does not restrict reverse engineering or modification of the LGPL components.
+Changing those files requires rebuilding the package and refreshing its integrity
+metadata; package integrity verification applies equally to all bundled runtime files.

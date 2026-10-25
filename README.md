@@ -3,9 +3,18 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Producer version: **0.6.4 — isolated acceptance candidate**. The final runtime source pin,
-vendor payload, epkg and isolated installed Electron E2E are still pending; the version
-update alone is not release approval. The retained 0.5.0 artifacts below are historical.
+Producer version: **0.6.7, offline decoder candidate**. Promotion and installed Electron
+acceptance remain separate review steps; a version update alone is not release approval.
+The retained 0.5.0 artifacts below are historical.
+
+The supported Windows production package now includes a pinned LGPL FFmpeg/ffprobe
+and DLL closure. Use `npm run build:production -- --output-root <fresh-absolute-dir>
+--rocut <pinned-checkout> --surface-dir <built-surface> --wasm-package-dir <built-wasm>`
+for the formal production path. It verifies the fixed upstream revision and archived
+decoder inputs before building the complete platform candidate. A generic `npm run build`
+with only a legacy vendor tree intentionally fails closed when this decoder closure is
+absent. See [offline decoder build inputs](build-inputs/offline-decoders/README.md)
+for archived sources, licenses, exact hashes and reproducibility scope.
 
 The **0.5.0 native motion text and JIZURA baseline** ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's

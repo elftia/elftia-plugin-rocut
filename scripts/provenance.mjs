@@ -14,6 +14,7 @@
  */
 import { readdir, readFile, lstat, realpath } from "node:fs/promises";
 import path from "node:path";
+import { createHash } from 'node:crypto';
 
 import { sha256 } from "./dist-layout.mjs";
 
@@ -114,13 +115,15 @@ export function renderProvenance(facts) {
     "## Upstream working tree at pack time",
     "",
     facts.dirtyEntries.length === 0
-      ? "The upstream tree was clean — `git status --porcelain` was empty."
+      ? (modified ? 'The upstream tree has the tracked modifications recorded below.' : "The upstream tree was clean — `git status --porcelain` was empty.")
       : [
-          "The upstream tree carried **untracked** entries only; every tracked file",
-          "was byte-identical to the pinned commit (`git status --porcelain`",
-          "reported no `M`/`A`/`D`/`R` rows, and `git diff HEAD --stat` was empty).",
+          ...(modified ? ['The upstream tree carries untracked entries and the tracked modifications recorded below.'] : [
+            "The upstream tree carried **untracked** entries only; every tracked file",
+            "was byte-identical to the pinned commit (`git status --porcelain`",
+            "reported no `M`/`A`/`D`/`R` rows, and `git diff HEAD --stat` was empty).",
+          ]),
           "Upstream's packer counts untracked files as dirty, so it was run with",
-          "`--allow-dirty`; the pin above is still exact for every byte that ships.",
+          modified ? '`--allow-dirty`; this is not a pin-only build.' : "`--allow-dirty`; the pin above is still exact for every byte that ships.",
           "",
           "Untracked entries present, verbatim from `git status --porcelain`:",
           "",
@@ -149,6 +152,7 @@ export function renderProvenance(facts) {
           ),
           "",
         ]),
+    ...(facts.cliSourceInputs ? ['## CLI project source inputs', '', '```json', JSON.stringify(facts.cliSourceInputs, null, 2), '```', ''] : []),
     "## Build claim",
     "",
     "- `vendor/run/` — upstream `node script/pack-runtime.mjs`: esbuild",
@@ -222,6 +226,15 @@ export function parseProvenanceManifest(text) {
 export function readProvenanceFact(text, label) {
   const match = new RegExp(`^- ${label}: (.+)$`, "m").exec(text);
   return match === null ? null : match[1].trim();
+}
+
+export function readCliSourceInputs(text) {
+  const match = /## CLI project source inputs\n\n```json\n([\s\S]*?)\n```/.exec(text);
+  if (!match) return null;
+  const value = JSON.parse(match[1]);
+  assert(value.version === 1 && Array.isArray(value.files), 'Invalid CLI source inventory');
+  assert(value.sha256 === createHash('sha256').update(JSON.stringify(value.files)).digest('hex'), 'CLI source inventory digest mismatch');
+  return value;
 }
 
 /**

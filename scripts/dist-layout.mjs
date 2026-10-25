@@ -18,6 +18,8 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { validateToolchainClosure } from "./toolchain-closure.mjs";
+import { createRequire } from 'node:module';
+const { verifyOfflineDecoders } = createRequire(import.meta.url)('../main/index.cjs');
 import {
   RUN_FILE_PATTERN,
   assertRuntimeSidecarClosure,
@@ -51,6 +53,7 @@ export const ARTIFACT_MAPPING = Object.freeze([
   { kind: "tree", source: "vendor/run", filePattern: RUN_FILE_PATTERN },
   { kind: "tree", source: "vendor/surface" },
   { kind: "tree", source: "prebuilds/win32-x64/toolchain", optional: true },
+  { kind: "tree", source: "prebuilds/win32-x64/decoder", optional: true },
 ]);
 
 export const RUNTIME_ROOT_ENTRIES = Object.freeze([
@@ -411,6 +414,9 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
   );
   assert(main?.requiredMajor === 1, "manifest main requiredMajor must be 1");
   assert(main?.requiredMinor === 77, "manifest main requiredMinor must be 77");
+  const [major, minor, patch] = manifest.version.split('.').map(Number);
+  if (major > 0 || minor > 6 || (minor === 6 && patch >= 7))
+    await verifyOfflineDecoders(treeRoot);
   assert(
     typeof main?.builtAgainst === "string" && main.builtAgainst.length > 0,
     "manifest main builtAgainst missing",
@@ -453,7 +459,9 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
   if (hasPrebuilds) {
     assert(JSON.stringify(manifest.supportedPlatforms) === JSON.stringify(["win32-x64"]), "local candidate supportedPlatforms must be win32-x64");
     assert(JSON.stringify((await readdir(path.join(treeRoot, "prebuilds"))).sort()) === JSON.stringify(["win32-x64"]), "prebuild targets must match supportedPlatforms");
-    assert(JSON.stringify(await readdir(path.join(treeRoot, "prebuilds/win32-x64"))) === JSON.stringify(["toolchain"]), "prebuild target must contain only toolchain");
+    const prebuildEntries = (await readdir(path.join(treeRoot, "prebuilds/win32-x64"))).sort();
+    assert(JSON.stringify(prebuildEntries) === JSON.stringify(["decoder", "toolchain"]) || JSON.stringify(prebuildEntries) === JSON.stringify(["toolchain"]), "prebuild target must contain only registered decoder/toolchain");
+    if (prebuildEntries.includes('decoder')) await verifyOfflineDecoders(treeRoot);
     const validated = await validateToolchainClosure(path.join(treeRoot, "prebuilds/win32-x64/toolchain"));
     assert(validated.closure.projection?.platformTarget === "win32-x64", "prebuild requires explicit platform projection");
   } else assert(!manifest.supportedPlatforms?.length, "supportedPlatforms requires matching prebuilds");

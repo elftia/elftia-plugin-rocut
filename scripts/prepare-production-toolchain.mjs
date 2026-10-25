@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFile, lstat, mkdir, readFile, readdir, realpath, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { composeToolchainSources } from "./toolchain-sources.mjs";
 import { projectToolchainPrebuild } from "./toolchain-prebuild.mjs";
 import { COMPILER_PROFILE } from "./toolchain-compiler-profile.mjs";
 import { validateToolchainClosure } from "./toolchain-closure.mjs";
+import { assertOrdinaryPath, assertDisjointDecoderPaths } from './offline-decoder-inputs.mjs';
 
 const repo = fileURLToPath(new URL("../", import.meta.url));
 const digest = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -27,22 +28,27 @@ function install(directory, cache) {
   assert.equal(result.status, 0, `isolated locked npm ci failed: ${result.stderr || result.stdout}`);
 }
 
-/** Fresh-clone recipe: registry SRI locks plus the committed source-bearing package archive. */
-export async function prepareProductionToolchain(outputRoot, options = {}) {
-  assert.equal(`${process.platform}-${process.arch}`, "win32-x64", "explicit win32-x64 production toolchain only");
-  assert(path.isAbsolute(outputRoot), "absolute fresh output root required");
-  const relative = path.relative(repo, outputRoot);
-  assert(relative !== "", "cannot overwrite producer repository");
-  await mkdir(outputRoot);
-  assert((await lstat(outputRoot)).isDirectory() && await realpath(outputRoot) === path.resolve(outputRoot), "ordinary output root required");
-  const inputs = path.join(outputRoot, "inputs");
-  await copyRegular(path.join(repo, "build-inputs/toolchain"), inputs);
+export async function validateProductionToolchainInputs(inputs) {
+  await assertOrdinaryPath(inputs);
+  for (const name of ['three-assets/provenance.json', 'hyperframes-remotion/package-lock.json', 'three/package-lock.json', 'license-evidence.json', 'compiler-review.json']) await assertOrdinaryPath(path.join(inputs, name), 'file');
   const provenance = JSON.parse(await readFile(path.join(inputs, "three-assets/provenance.json"), "utf8"));
+  assert(/^[A-Za-z0-9._-]+$/.test(provenance.archive.file) && !['.', '..'].includes(provenance.archive.file), 'flat toolchain source archive name required');
+  await assertOrdinaryPath(path.join(inputs, 'three-assets', provenance.archive.file), 'file');
   const archive = await readFile(path.join(inputs, "three-assets", provenance.archive.file));
+  assert.equal(archive.length, provenance.archive.bytes, 'portable source archive size drift');
   assert.equal(digest(archive), provenance.archive.sha256, "portable source archive drift");
   assert.equal("sha512-" + createHash("sha512").update(archive).digest("base64"), provenance.archive.integrity);
   for (const name of ["hyperframes-remotion", "three"]) {
+    await assertOrdinaryPath(path.join(inputs, name, 'package.json'), 'file');
+    const manifest = JSON.parse(await readFile(path.join(inputs, name, 'package.json'), 'utf8'));
     const lock = JSON.parse(await readFile(path.join(inputs, name, "package-lock.json"), "utf8"));
+    const root = lock.packages?.[''];
+    assert(root && typeof root === 'object', `toolchain root lock metadata required: ${name}`);
+    for (const key of ['name', 'version']) {
+      assert.equal(root[key], manifest[key], `toolchain manifest/root lock ${key} mismatch: ${name}`);
+      assert.equal(lock[key], manifest[key], `toolchain manifest/lock ${key} mismatch: ${name}`);
+    }
+    for (const key of ['dependencies', 'devDependencies', 'optionalDependencies']) assert.deepEqual(root[key] ?? {}, manifest[key] ?? {}, `toolchain manifest/root lock ${key} mismatch: ${name}`);
     for (const [key, pin] of Object.entries(lock.packages).filter(([key]) => key)) {
       if (key === "node_modules/@elftia/three-assets") {
         assert.equal(pin.resolved, `file:../three-assets/${provenance.archive.file}`);
@@ -51,8 +57,28 @@ export async function prepareProductionToolchain(outputRoot, options = {}) {
         assert(pin.resolved.startsWith("https://registry.npmjs.org/") && /^sha512-/.test(pin.integrity), `portable locked registry source required: ${key}`);
       }
     }
-    await (options.install ?? install)(path.join(inputs, name), path.join(outputRoot, "npm-cache"));
   }
+  return provenance;
+}
+
+/** Fresh-clone recipe: registry SRI locks plus the committed source-bearing package archive. */
+export async function prepareProductionToolchain(outputRoot, options = {}, ports = {}) {
+  assert.equal(`${process.platform}-${process.arch}`, "win32-x64", "explicit win32-x64 production toolchain only");
+  assert(typeof outputRoot === 'string' && path.isAbsolute(outputRoot), "absolute fresh output root required");
+  // The repository port is for isolated tests, never a CLI-selected metadata source.
+  const sourceRepo = ports.repoRoot ?? repo;
+  const sourceInputs = path.join(sourceRepo, 'build-inputs/toolchain');
+  await assertOrdinaryPath(path.dirname(outputRoot));
+  assertDisjointDecoderPaths(outputRoot, sourceInputs);
+  assert.notEqual(path.resolve(outputRoot), path.resolve(sourceRepo), 'cannot overwrite producer repository');
+  await validateProductionToolchainInputs(sourceInputs);
+  await mkdir(outputRoot);
+  await assertOrdinaryPath(outputRoot);
+  const inputs = path.join(outputRoot, 'inputs');
+  await copyRegular(sourceInputs, inputs);
+  // Recheck the copied snapshot in full before either npm invocation.
+  const provenance = await validateProductionToolchainInputs(inputs);
+  for (const name of ['hyperframes-remotion', 'three']) await (options.install ?? install)(path.join(inputs, name), path.join(outputRoot, 'npm-cache'));
   const evidence = JSON.parse(await readFile(path.join(inputs, "license-evidence.json"), "utf8"));
   const licenseEvidence = evidence.map(({ sourceUrl, ...pin }) => ({ ...pin, sourceFile: path.join(inputs, pin.sourceFile) }));
   const full = path.join(outputRoot, "full");

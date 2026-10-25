@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { readFile, mkdir, writeFile, mkdtemp, lstat, realpath, rm } from "node:fs/promises";
 import path from "node:path";
 import { RUN_FILE_PATTERN, inventoryRegularTree, sha256, ARTIFACT_MAPPING } from "./dist-layout.mjs";
-import { inventoryVendorTree } from "./provenance.mjs";
+import { inventoryVendorTree, readCliSourceInputs, readProvenanceFact, verifyVendorAgainstProvenance } from "./provenance.mjs";
 import { rewriteAssetManifest, assertMotionTextFontNotice, validateSurfaceAssetManifest } from "./vendor-rocut.mjs";
 import { copyToolchainClosure, validateToolchainClosure } from "./toolchain-closure.mjs";
 import { composeToolchainSources } from "./toolchain-sources.mjs";
 import { projectToolchainPrebuild } from "./toolchain-prebuild.mjs";
 import { normalizeDeliveryBytes, refreshSelectedSurfaceManifest, normalizeSelectedToolchain } from "./selected-delivery-bytes.mjs";
+import { prepareOfflineDecoders } from './prepare-offline-decoders.mjs';
+import { inspectOfflineDecoderInputs, assertDisjointDecoderPaths } from './offline-decoder-inputs.mjs';
 
 export async function inspectSelectedRuntime(runtimeDir, manifestPath) {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
@@ -36,7 +38,22 @@ export async function prepareSelectedSources(repoRoot, options) {
   assert(options.outputRoot && path.isAbsolute(options.outputRoot), "selected artifact build requires explicit absolute outputRoot");
   assert(path.isAbsolute(options.runtimeDir) && path.isAbsolute(options.surfaceDir) && path.isAbsolute(options.packManifest), "selected inputs must be explicit absolute paths");
   assert(path.resolve(options.outputRoot) !== path.resolve(repoRoot), "selected output must not overwrite producer repository");
+  if (options.offlineDecoderInputs !== undefined) {
+    assert(options.toolchainDir || options.toolchainSources, 'offline decoder inputs require a toolchain');
+    const inspected = await inspectOfflineDecoderInputs(repoRoot, options.offlineDecoderInputs);
+    assertDisjointDecoderPaths(options.outputRoot, inspected.identity.archiveDirectory);
+  }
   const selected = await inspectSelectedRuntime(options.runtimeDir, options.packManifest);
+  let upstreamCliSourceInputs = null, upstreamVendorProvenanceSha256 = null;
+  if (options.vendorProvenanceFile) {
+    await verifyVendorAgainstProvenance(path.dirname(options.vendorProvenanceFile));
+    const bytes = await readFile(options.vendorProvenanceFile);
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    assert.equal(readProvenanceFact(text, 'Upstream source commit'), selected.manifest.repoHead, 'CLI source provenance commit differs');
+    upstreamCliSourceInputs = readCliSourceInputs(text);
+    assert(upstreamCliSourceInputs, 'Selected source requires generated CLI source inventory');
+    upstreamVendorProvenanceSha256 = sha256(bytes);
+  }
   const surface = await inventoryRegularTree(options.surfaceDir, "selected surface");
   await validateSurfaceAssetManifest(options.surfaceDir, JSON.parse(await readFile(path.join(options.surfaceDir, "asset-manifest.json"), "utf8")));
   const parent = path.resolve(options.outputRoot);
@@ -88,7 +105,7 @@ export async function prepareSelectedSources(repoRoot, options) {
   await copy(licenseFile, path.join(vendor, "LICENSE"));
   await writeFile(path.join(vendor, "NOTICE.md"), notice);
   assert(!(options.toolchainDir && options.toolchainSources), "choose toolchainDir or toolchainSources");
-  let toolchain = null;
+  let toolchain = null, offlineDecoders = null;
   if (options.toolchainDir || options.toolchainSources) {
     const prebuildParent = path.join(sourceRoot, "prebuilds", options.platformTarget);
     await mkdir(prebuildParent, { recursive: true });
@@ -108,6 +125,7 @@ export async function prepareSelectedSources(repoRoot, options) {
       const deliveryInput = await validateToolchainClosure(deliveryRoot);
       if (!deliveryInput.closure.deliveryNormalization) toolchain = await normalizeSelectedToolchain(deliveryRoot, deliveryInput);
       await validateToolchainClosure(deliveryRoot);
+      offlineDecoders = await prepareOfflineDecoders(path.join(prebuildParent, 'decoder'), repoRoot, options.offlineDecoderInputs);
     } finally {
       if (scratch) {
         const current = await lstat(scratch, { bigint: true });
@@ -118,7 +136,8 @@ export async function prepareSelectedSources(repoRoot, options) {
     }
   }
   const entries = await inventoryVendorTree(vendor);
-  const facts = { mode: "explicit-selected-production-artifacts-not-pin-only", repoHead: selected.manifest.repoHead, dirty: selected.manifest.dirty, sourcePins, deliveryNormalizations, manifestProjection, upstreamLicenseSha256: sha256(await readFile(licenseFile)), runtimeManifestSha256: sha256(await readFile(options.packManifest)), runtime: selected.runtime, surfaceInput: surface.entries, brandingSubstitution: sha256(placeholder), surfaceManifestRewrite: rewritten, toolchain };
+  const upstreamSourceFacts = { upstreamCliSourceInputs, upstreamVendorProvenanceSha256, offlineDecoderInputIdentity: offlineDecoders?.inputIdentity ?? null };
+  const facts = { mode: "explicit-selected-production-artifacts-not-pin-only", repoHead: selected.manifest.repoHead, dirty: selected.manifest.dirty, ...upstreamSourceFacts, sourcePins, deliveryNormalizations, manifestProjection, upstreamLicenseSha256: sha256(await readFile(licenseFile)), runtimeManifestSha256: sha256(await readFile(options.packManifest)), runtime: selected.runtime, surfaceInput: surface.entries, brandingSubstitution: sha256(placeholder), surfaceManifestRewrite: rewritten, toolchain };
   await writeFile(path.join(vendor, "PROVENANCE.md"), `# Selected production artifact provenance\n\nNot a pin-only source build. Current producer manifest/main/skills and explicitly selected production runtime/Surface; the unchanged upstream.json default pin is not claimed to reproduce these bytes.\n\n${JSON.stringify(facts, null, 2)}\n\n## SHA-256 manifest\n\n${entries.length} files.\n\n\`\`\`\n${entries.map(e => `${e.sha256}  ${e.path}`).join("\n")}\n\`\`\`\n`);
   return { sourceRoot, facts };
 }

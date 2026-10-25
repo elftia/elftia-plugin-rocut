@@ -119,7 +119,7 @@ describe("artifact mapping", () => {
     expect(assertRocutPackageBudget({ entries: Array.from({ length: 4096 }, () => ({ path: "fixture", size: 0 })) }).fileCount).toBe(4096);
     expect(() => assertRocutPackageBudget({ entries: Array.from({ length: 4097 }, () => ({ path: "fixture", size: 0 })) })).toThrow(/4096 archive entries/);
   });
-  it("admits node_modules only inside an exact licensed toolchain closure", async () => {
+  it.skipIf(process.platform !== "win32" || process.arch !== "x64")("admits node_modules only inside an exact licensed toolchain closure", async () => {
     const source = await buildFakeTree();
     const toolchain = path.join(await scratch(), "toolchain");
     const packages: Record<string, { version: string; integrity: string }> = {};
@@ -155,6 +155,14 @@ describe("artifact mapping", () => {
     await expect(validateRocutTree(source)).rejects.toThrow(/pins mismatch|undeclared/);
   });
 
+  it.skipIf(process.platform === "win32" && process.arch === "x64")("rejects a Windows toolchain projection on a different host before creating output", async () => {
+    const parent = await scratch();
+    const target = path.join(parent, "toolchain");
+    await expect(projectToolchainPrebuild(path.join(parent, "missing-source"), target, "win32-x64"))
+      .rejects.toThrow("prebuild projection requires matching host target");
+    expect(existsSync(target)).toBe(false);
+  });
+
   it("names every shipped path explicitly instead of excluding", () => {
     expect(ARTIFACT_MAPPING.map((rule) => rule.source)).toEqual([
       "elftia-plugin.json",
@@ -168,6 +176,7 @@ describe("artifact mapping", () => {
       "vendor/run",
       "vendor/surface",
       "prebuilds/win32-x64/toolchain",
+      "prebuilds/win32-x64/decoder",
     ]);
   });
 
@@ -277,7 +286,7 @@ describe("install-tree validation fails closed", () => {
     expect(result.inventory.fileCount).toBe(14);
   });
 
-  it("accepts the actual committed producer manifest and main checksum", async () => {
+  it("requires the pinned decoder closure with the actual committed manifest and main checksum", async () => {
     const root = await buildFakeTree();
     await writeFile(
       path.join(root, "elftia-plugin.json"),
@@ -287,9 +296,11 @@ describe("install-tree validation fails closed", () => {
       path.join(root, "main/index.cjs"),
       await readFile(path.join(repoRoot, "main/index.cjs")),
     );
-    const result = await validateRocutTree(root);
-    expect(result.manifest.contributes.main.requiredMinor).toBe(77);
-    expect(result.manifest.contributes.main.builtAgainst).toBe("1.77.0");
+    await expect(validateRocutTree(root)).rejects.toThrow(/ENOENT/);
+    const manifest = JSON.parse(await readFile(path.join(root, 'elftia-plugin.json'), 'utf8'));
+    expect(manifest.contributes.main.checksum).toBe(sha512Text(await readFile(path.join(root, 'main/index.cjs'), 'utf8')));
+    expect(manifest.contributes.main.requiredMinor).toBe(77);
+    expect(manifest.contributes.main.builtAgainst).toBe('1.77.0');
   });
 
   it("rejects the obsolete Host API 1.51 requirement", async () => {

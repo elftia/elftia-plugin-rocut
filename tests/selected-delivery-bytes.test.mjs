@@ -9,7 +9,7 @@ import { normalizeDeliveryBytes, normalizeSelectedToolchain, refreshSelectedSurf
 import { projectToolchainPrebuild } from "../scripts/toolchain-prebuild.mjs";
 import { prepareSelectedSources } from "../scripts/selected-runtime.mjs";
 import { validateSurfaceAssetManifest } from "../scripts/vendor-rocut.mjs";
-import { verifyVendorAgainstProvenance } from "../scripts/provenance.mjs";
+import { verifyVendorAgainstProvenance, inventoryVendorTree, renderProvenance } from "../scripts/provenance.mjs";
 import { composeToolchainSources } from "../scripts/toolchain-sources.mjs";
 import { COMPILER_PROFILE, OMITTED_PACKAGES, PROFILE_ENTRY_POINTS } from "../scripts/toolchain-compiler-profile.mjs";
 
@@ -155,8 +155,17 @@ test("selected producer normalizes before Surface and vendor manifests and disti
   await writeFile(path.join(surfaceDir, "flag.svg"), flag);
   await writeFile(path.join(surfaceDir, "index.html"), "<!doctype html>\r\n");
   await writeFile(path.join(surfaceDir, "asset-manifest.json"), JSON.stringify({ fileCount: 1, totalBytes: flag.length, files: [{ path: "flag.svg", category: "flags", bytes: flag.length, sha256: sha256(flag) }] }));
-  const packManifest = path.join(root, "pack.json"); await writeFile(packManifest, JSON.stringify({ files }));
-  const selected = await prepareSelectedSources(repo, { runtimeDir, surfaceDir, packManifest, outputRoot: path.join(root, "output") });
+  const packManifest = path.join(root, "pack.json"); await writeFile(packManifest, JSON.stringify({ repoHead: 'a'.repeat(40), dirty: true, files }));
+  const sourceFiles = [{ path: 'apps/cli/src/agent-project-scope.ts', status: 'untracked', sizeBytes: 1, sha256: 'b'.repeat(64) }];
+  const cliSourceInputs = { version: 1, scope: 'fixture CLI project inputs only', files: sourceFiles, sha256: sha256(Buffer.from(JSON.stringify(sourceFiles))) };
+  const vendorProvenanceFile = path.join(runtimeDir, 'PROVENANCE.md');
+  await writeFile(vendorProvenanceFile, renderProvenance({ upstreamCommit: 'a'.repeat(40), upstreamRepository: 'fixture',
+    packedAt: 'fixture', nodeVersion: 'fixture', esbuildVersion: 'fixture', bunVersion: 'fixture', platform: 'fixture',
+    dirtyEntries: ['?? apps/cli/src/agent-project-scope.ts'], cliSourceInputs, substitutions: [], removals: [],
+    entries: await inventoryVendorTree(runtimeDir) }));
+  const selected = await prepareSelectedSources(repo, { runtimeDir, surfaceDir, packManifest, vendorProvenanceFile, outputRoot: path.join(root, "output") });
+  assert.deepEqual(selected.facts.upstreamCliSourceInputs, cliSourceInputs);
+  assert.equal(selected.facts.upstreamVendorProvenanceSha256, sha256(await readFile(vendorProvenanceFile)));
   const vendor = path.join(selected.sourceRoot, "vendor"), manifest = JSON.parse(await readFile(path.join(vendor, "surface/asset-manifest.json")));
   await validateSurfaceAssetManifest(path.join(vendor, "surface"), manifest);
   await verifyVendorAgainstProvenance(vendor);

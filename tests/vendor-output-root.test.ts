@@ -9,6 +9,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { lstatSync, realpathSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -21,7 +22,7 @@ const links: string[] = [];
 const identities = new Map<string, { dev: number; ino: number }>();
 async function fixture() {
   const root = await mkdtemp(
-    path.join(path.parse(process.cwd()).root, "rocut-output-test-"),
+    path.join(realpathSync.native(tmpdir()), "rocut-output-test-"),
   );
   roots.push(root);
   identities.set(root, lstatSync(root));
@@ -84,9 +85,15 @@ it("keeps legacy roots and rejects relative, existing, overlapping or reused fre
       f.upstream,
     ),
   ).toThrow(/skip-pack/);
+  await mkdir(path.join(f.upstream, "script"));
+  await writeFile(
+    path.join(f.upstream, "script/pack-runtime.mjs"),
+    'throw new Error("fixture pack-runtime must never execute");\n',
+  );
   await expect(
-    vendorRocut({ outputRoot: f.outputRoot, skipPack: true }),
+    vendorRocut({ rocutRoot: f.upstream, outputRoot: f.outputRoot, skipPack: true }),
   ).rejects.toThrow(/skip-pack/);
+  await expect(readFile(f.outputRoot)).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 it("rejects Surface and WASM overlap without creating output", async () => {

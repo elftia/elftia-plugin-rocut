@@ -7,6 +7,7 @@ import { vendorRocut } from "./vendor-rocut.mjs";
 import { prepareProductionToolchain } from "./prepare-production-toolchain.mjs";
 import { buildDist } from "./build-dist.mjs";
 import { validateToolchainClosure } from "./toolchain-closure.mjs";
+import { inspectOfflineDecoderInputs, assertDisjointDecoderPaths, assertOrdinaryPath } from './offline-decoder-inputs.mjs';
 
 const repo = fileURLToPath(new URL("../", import.meta.url));
 const digest = bytes => createHash("sha256").update(bytes).digest("hex");
@@ -15,6 +16,21 @@ const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 export async function buildProductionCandidate(options, ports = {}) {
   const { outputRoot, rocutRoot, surfaceDirectory, wasmPackageDirectory } = options;
   assert([outputRoot, rocutRoot, surfaceDirectory, wasmPackageDirectory].every(value => typeof value === "string" && path.isAbsolute(value)), "explicit absolute production paths required");
+  await assertOrdinaryPath(path.dirname(outputRoot));
+  for (const input of [rocutRoot, surfaceDirectory, wasmPackageDirectory]) {
+    await assertOrdinaryPath(input);
+    assertDisjointDecoderPaths(outputRoot, input);
+  }
+  if (options.toolchainDir !== undefined) {
+    await assertOrdinaryPath(options.toolchainDir);
+    assertDisjointDecoderPaths(outputRoot, options.toolchainDir);
+    await (ports.validateToolchain ?? validateToolchainClosure)(options.toolchainDir);
+  }
+  assertDisjointDecoderPaths(outputRoot, path.join(repo, 'build-inputs/offline-decoders'));
+  if (options.offlineDecoderInputs !== undefined) {
+    const inspected = await inspectOfflineDecoderInputs(repo, options.offlineDecoderInputs);
+    assertDisjointDecoderPaths(outputRoot, inspected.identity.archiveDirectory);
+  }
   await mkdir(outputRoot);
   const vendoring = path.join(outputRoot, "vendoring");
   const vendor = await (ports.vendor ?? vendorRocut)({
@@ -29,6 +45,8 @@ export async function buildProductionCandidate(options, ports = {}) {
   const candidate = await (ports.build ?? buildDist)({
     runtimeDir: runtime, surfaceDir: path.join(runtime, "surface"), packManifest,
     licenseFile: path.join(vendor.vendorRoot, "LICENSE"),
+    vendorProvenanceFile: path.join(vendor.vendorRoot, 'PROVENANCE.md'),
+    offlineDecoderInputs: options.offlineDecoderInputs,
     toolchainDir: toolchain, platformTarget: "win32-x64", outputRoot: path.join(outputRoot, "candidate"),
   });
   const facts = {
@@ -39,6 +57,7 @@ export async function buildProductionCandidate(options, ports = {}) {
     buildInputs: {
       threeAssets: digest(await readFile(path.join(repo, "build-inputs/toolchain/three-assets/provenance.json"))),
       compilerReview: digest(await readFile(path.join(repo, "build-inputs/toolchain/compiler-review.json"))),
+      offlineDecoders: digest(await readFile(path.join(repo, "build-inputs/offline-decoders/provenance.json"))),
     },
     candidate: { relativePath: path.relative(outputRoot, candidate.target).split(path.sep).join("/"), inventory: candidate.inventory, packageBudget: candidate.packageBudget },
   };
@@ -48,7 +67,7 @@ export async function buildProductionCandidate(options, ports = {}) {
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   const flag = name => { const index = process.argv.indexOf(`--${name}`); return index < 0 ? undefined : process.argv[index + 1]; };
-  const result = await buildProductionCandidate({ outputRoot: flag("output-root"), rocutRoot: flag("rocut"), surfaceDirectory: flag("surface-dir"), wasmPackageDirectory: flag("wasm-package-dir"), toolchainDir: flag("toolchain-dir") });
+  const result = await buildProductionCandidate({ offlineDecoderInputs: process.argv.includes('--offline-decoder-inputs') ? flag('offline-decoder-inputs') ?? '' : undefined, outputRoot: flag("output-root"), rocutRoot: flag("rocut"), surfaceDirectory: flag("surface-dir"), wasmPackageDirectory: flag("wasm-package-dir"), toolchainDir: flag("toolchain-dir") });
   const { entries, ...inventory } = result.facts.candidate.inventory;
   console.log(JSON.stringify({ target: result.target, ...result.facts, candidate: { ...result.facts.candidate, inventory } }));
 }

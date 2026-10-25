@@ -2,6 +2,9 @@
 
 const os = require('node:os');
 const path = require('node:path');
+const fs = require('node:fs/promises');
+const { createReadStream } = require('node:fs');
+const { createHash } = require('node:crypto');
 
 const MANIFEST = require('../elftia-plugin.json');
 
@@ -88,7 +91,65 @@ function createCapabilityEndpoint(toolDescriptor) {
   };
 }
 
-function createDescriptor(options = {}) {
+async function verifyOfflineDecoders(pluginRoot) {
+  const expectedLedgerSha256 = '46f4257d11cca234ab4504f9ffbe5153e5118e77a328222af9cb67449b7437c7';
+  const root = path.join(pluginRoot, 'prebuilds', 'win32-x64', 'decoder');
+  const same = (a, b) => process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+  async function ordinary(file, directory = false) {
+    const absolute = path.resolve(file), volume = path.parse(absolute).root;
+    let current = volume;
+    for (const part of path.relative(volume, absolute).split(path.sep)) {
+      current = path.join(current, part);
+      const state = await fs.lstat(current);
+      if (state.isSymbolicLink() || !same(await fs.realpath(current), current) ||
+          (current !== absolute || directory ? !state.isDirectory() : !state.isFile()))
+        throw Error('[rocut] offline decoder path is redirected or not ordinary');
+    }
+    return fs.lstat(absolute, { bigint: true });
+  }
+  const rootIdentity = await ordinary(root, true);
+  const ledgerPath = path.join(root, 'decoder-manifest.json');
+  await ordinary(ledgerPath);
+  const manifestBytes = await fs.readFile(ledgerPath);
+  if (createHash('sha256').update(manifestBytes).digest('hex') !== expectedLedgerSha256)
+    throw Error('[rocut] offline decoder manifest failed pinned integrity verification');
+  const ledger = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestBytes));
+  if (ledger.version !== 1 || ledger.platform !== 'win32-x64' || !Array.isArray(ledger.files) ||
+      ledger.files.length < 10 || ledger.files.length > 64)
+    throw Error('[rocut] invalid offline decoder manifest');
+  const declared = new Set(['decoder-manifest.json']);
+  const snapshots = [];
+  for (const pin of ledger.files) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(pin.path) || declared.has(pin.path) ||
+        !/^[a-f0-9]{64}$/.test(pin.sha256) || !Number.isSafeInteger(pin.bytes) || pin.bytes < 1 || pin.bytes > 200 * 1024 ** 2)
+      throw Error('[rocut] invalid offline decoder file pin');
+    declared.add(pin.path);
+    const file = path.join(root, pin.path), before = await ordinary(file);
+    if (before.size !== BigInt(pin.bytes)) throw Error('[rocut] offline decoder size differs');
+    const hash = createHash('sha256');
+    // Stream asynchronously: activation never blocks the main thread hashing the DLL closure.
+    for await (const chunk of createReadStream(file)) hash.update(chunk);
+    const after = await ordinary(file);
+    if (hash.digest('hex') !== pin.sha256 || ['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].some(key => before[key] !== after[key]))
+      throw Error('[rocut] offline decoder changed or failed integrity verification');
+    snapshots.push({ file, state: after });
+  }
+  if (JSON.stringify((await fs.readdir(root)).sort()) !== JSON.stringify([...declared].sort()) ||
+      !declared.has('ffmpeg.exe') || !declared.has('ffprobe.exe') || !declared.has('LICENSE.txt') ||
+      !(await fs.readFile(ledgerPath)).equals(manifestBytes))
+    throw Error('[rocut] offline decoder closure differs from manifest');
+  for (const { file, state } of snapshots) {
+    const after = await ordinary(file);
+    if (['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].some(key => state[key] !== after[key]))
+      throw Error('[rocut] offline decoder closure changed during verification');
+  }
+  const currentRoot = await ordinary(root, true);
+  if (['dev', 'ino', 'mtimeNs', 'ctimeNs'].some(key => rootIdentity[key] !== currentRoot[key]))
+    throw Error('[rocut] offline decoder directory changed during verification');
+  return { ROCUT_NATIVE_FFMPEG_PATH: path.join(root, 'ffmpeg.exe'), ROCUT_NATIVE_FFPROBE_PATH: path.join(root, 'ffprobe.exe') };
+}
+
+async function createDescriptor(options = {}) {
   const pluginRoot = path.resolve(options.pluginRoot || path.join(__dirname, '..'));
   const registryRoot = path.resolve(options.registryRoot || path.join(os.homedir(), '.rocut'));
   // The restricted Tool Host launcher does not inherit application configuration.
@@ -96,11 +157,11 @@ function createDescriptor(options = {}) {
   const nativeEnvironment = {};
   for (const name of [
     'ROCUT_ENGINE_TOOLCHAIN_DIR',
-    'ROCUT_NATIVE_FFMPEG_PATH',
-    'ROCUT_NATIVE_FFPROBE_PATH',
   ]) {
     if (process.env[name] !== undefined) nativeEnvironment[name] = process.env[name];
   }
+  // Decoder identity comes only from the installed, verified package, never PATH or env.
+  Object.assign(nativeEnvironment, await verifyOfflineDecoders(pluginRoot));
 
   return {
     toolId: TOOL_ID,
@@ -188,13 +249,13 @@ function registerCapability(host, toolDescriptor) {
   }
 }
 
-function activate(host) {
+async function activate(host) {
   if (!host || !host.toolHosts || typeof host.toolHosts.register !== 'function') {
     throw new Error(
       '[rocut] Elftia host.toolHosts is unavailable; Elftia Host API >= 1.51 is required.',
     );
   }
-  const toolDescriptor = createDescriptor();
+  const toolDescriptor = await createDescriptor();
   const unregister = host.toolHosts.register(toolDescriptor);
   registerCapability(host, toolDescriptor);
   return unregister;
@@ -206,4 +267,5 @@ module.exports = {
   createCapabilityDescriptor,
   createCapabilityEndpoint,
   declaredCapability,
+  verifyOfflineDecoders,
 };

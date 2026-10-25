@@ -58,6 +58,7 @@ import {
 import { inventoryVendorTree, renderProvenance } from "./provenance.mjs";
 import { prepareVendorPaths } from "./vendor-paths.mjs";
 import { assertRuntimeSidecarClosure } from "./runtime-sidecars.mjs";
+import { captureCliSourceInputs, assertCliSourceInputsUnchanged } from './cli-source-inputs.mjs';
 
 const pluginRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -506,6 +507,9 @@ export async function vendorRocut(options = {}) {
     );
   }
 
+  const cliSourceInputs = options.skipPack === true ? null : await captureCliSourceInputs(upstreamRoot, {
+    wasmPackageDirectory: options.wasmPackageDirectory, outDir: path.join(workRoot, 'source-graph'),
+  });
   if (options.skipPack !== true) {
     await io.rm(packOut, { recursive: true, force: true });
     await io.mkdir(workRoot, { recursive: true });
@@ -534,6 +538,9 @@ export async function vendorRocut(options = {}) {
     log(packOutput);
     log(`REAL_EXIT_CODE[pack-runtime]:${pack.status}`);
     if (pack.status !== 0) fail(`upstream pack-runtime failed:\n${packOutput}`);
+    assertCliSourceInputsUnchanged(cliSourceInputs, await captureCliSourceInputs(upstreamRoot, {
+      wasmPackageDirectory: options.wasmPackageDirectory, outDir: path.join(workRoot, 'source-graph'),
+    }));
   } else {
     log("vendor: --skip-pack, reusing .elftia-work/dist-runtime");
   }
@@ -694,6 +701,7 @@ export async function vendorRocut(options = {}) {
     platform: `${process.platform} ${process.arch}`,
     dirtyEntries: tree.untracked,
     modifiedTracked,
+    cliSourceInputs,
     substitutions,
     removals: removalRecords,
     entries,
@@ -705,7 +713,7 @@ export async function vendorRocut(options = {}) {
   log(
     `vendor: PASS ${entries.length} file(s) under vendor/ pinned to ${head.slice(0, 12)}`,
   );
-  return { vendorRoot, head, entries, removals: removalRecords, substitutions };
+  return { vendorRoot, head, entries, removals: removalRecords, substitutions, cliSourceInputs };
 }
 
 const invokedPath =
