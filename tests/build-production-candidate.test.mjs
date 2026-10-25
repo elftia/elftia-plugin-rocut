@@ -15,6 +15,7 @@ test("normal production assembly consumes only this fresh vendor's runtime, mani
   const result = await buildProductionCandidate({
     outputRoot, rocutRoot: path.join(root, "upstream"), surfaceDirectory: path.join(root, "surface"),
     wasmPackageDirectory: path.join(root, "wasm"), toolchainDir: toolchain,
+    offlineDecoderInputs: process.env.ROCUT_OFFLINE_DECODER_INPUTS,
   }, {
     async vendor(options) {
       assert.equal(options.allowModifiedTracked, undefined);
@@ -25,6 +26,7 @@ test("normal production assembly consumes only this fresh vendor's runtime, mani
     async validateToolchain(directory) { assert.equal(directory, toolchain); verified = true; },
     async build(options) {
       assert(verified);
+      assert.equal(options.offlineDecoderInputs, process.env.ROCUT_OFFLINE_DECODER_INPUTS);
       assert.equal(options.licenseFile, path.join(outputRoot, "vendoring/vendor/LICENSE"));
       assert.equal(options.vendorProvenanceFile, path.join(outputRoot, 'vendoring/vendor/PROVENANCE.md'));
       assert.equal(options.runtimeDir, path.join(outputRoot, "vendoring/.elftia-work/dist-runtime"));

@@ -85,6 +85,7 @@ async function assertVendorPresent(repoRoot) {
 }
 
 export async function buildDist(options = {}) {
+  if (options.offlineDecoderInputs !== undefined && !options.runtimeDir) throw new Error('offline decoder inputs require explicit selected runtime inputs');
   if ((options.toolchainDir || options.toolchainSources) && !options.runtimeDir) throw new Error("toolchain sources require explicit selected runtime/surface/manifest inputs");
   let repoRoot = options.repoRoot ?? defaultRepoRoot;
   let selection = null;
@@ -126,7 +127,7 @@ if (invokedPath === import.meta.url) {
   try {
     const argv = process.argv.slice(2);
     const flag = name => { const index = argv.indexOf(`--${name}`); return index < 0 ? undefined : argv[index + 1]; };
-    const result = await buildDist({ runtimeDir: flag("runtime-dir"), surfaceDir: flag("surface-dir"), packManifest: flag("pack-manifest"), licenseFile: flag("license-file"), vendorProvenanceFile: flag("vendor-provenance-file"), outputRoot: flag("output-root"), toolchainDir: flag("toolchain-dir"), toolchainEngines: flag("toolchain-engines")?.split(","), platformTarget: flag("platform-target") });
+    const result = await buildDist({ offlineDecoderInputs: argv.includes('--offline-decoder-inputs') ? flag('offline-decoder-inputs') ?? '' : undefined, runtimeDir: flag("runtime-dir"), surfaceDir: flag("surface-dir"), packManifest: flag("pack-manifest"), licenseFile: flag("license-file"), vendorProvenanceFile: flag("vendor-provenance-file"), outputRoot: flag("output-root"), toolchainDir: flag("toolchain-dir"), toolchainEngines: flag("toolchain-engines")?.split(","), platformTarget: flag("platform-target") });
     console.info(
       result.selection
         ? `build-dist: selected vendor OK (${result.provenance.fileCount} files; HEAD ${result.selection.facts.repoHead}, dirty=${result.selection.facts.dirty}; not pin-only)`
