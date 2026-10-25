@@ -4,3 +4,5 @@ main/index.cjs text eol=lf
 # Build input hashes describe LF bytes on every checkout, including Windows.
 build-inputs/** text eol=lf
 build-inputs/**/*.tgz binary
+build-inputs/**/*.zip binary
+build-inputs/**/*.tar.gz binary

@@ -70,6 +70,17 @@ describe("build preflight when vendor/ is absent or incomplete", () => {
     await expect(buildDist({ repoRoot: fake })).rejects.not.toThrow(/ENOENT/);
   });
 
+  it('directs a legacy vendor-only 0.6.7 build to the complete production entry', async () => {
+    const fake = await scratch();
+    for (const name of ['PROVENANCE.md', 'LICENSE', 'NOTICE.md', 'run/rocut.mjs', 'surface/index.html']) {
+      const file = path.join(fake, 'vendor', name);
+      await mkdir(path.dirname(file), { recursive: true });
+      await writeFile(file, 'fixture\n');
+    }
+    await writeFile(path.join(fake, 'elftia-plugin.json'), JSON.stringify({ version: '0.6.7' }));
+    await expect(buildDist({ repoRoot: fake })).rejects.toThrow(/requires the verified bundled offline decoder closure.*npm run build:production/);
+  });
+
   it.runIf(realVendorAvailable)(
     "passes preflight for the real repository",
     async () => {

@@ -29,6 +29,7 @@ export async function buildProductionCandidate(options, ports = {}) {
   const candidate = await (ports.build ?? buildDist)({
     runtimeDir: runtime, surfaceDir: path.join(runtime, "surface"), packManifest,
     licenseFile: path.join(vendor.vendorRoot, "LICENSE"),
+    vendorProvenanceFile: path.join(vendor.vendorRoot, 'PROVENANCE.md'),
     toolchainDir: toolchain, platformTarget: "win32-x64", outputRoot: path.join(outputRoot, "candidate"),
   });
   const facts = {
@@ -39,6 +40,7 @@ export async function buildProductionCandidate(options, ports = {}) {
     buildInputs: {
       threeAssets: digest(await readFile(path.join(repo, "build-inputs/toolchain/three-assets/provenance.json"))),
       compilerReview: digest(await readFile(path.join(repo, "build-inputs/toolchain/compiler-review.json"))),
+      offlineDecoders: digest(await readFile(path.join(repo, "build-inputs/offline-decoders/provenance.json"))),
     },
     candidate: { relativePath: path.relative(outputRoot, candidate.target).split(path.sep).join("/"), inventory: candidate.inventory, packageBudget: candidate.packageBudget },
   };

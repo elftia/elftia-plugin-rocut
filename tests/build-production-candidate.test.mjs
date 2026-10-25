@@ -26,6 +26,7 @@ test("normal production assembly consumes only this fresh vendor's runtime, mani
     async build(options) {
       assert(verified);
       assert.equal(options.licenseFile, path.join(outputRoot, "vendoring/vendor/LICENSE"));
+      assert.equal(options.vendorProvenanceFile, path.join(outputRoot, 'vendoring/vendor/PROVENANCE.md'));
       assert.equal(options.runtimeDir, path.join(outputRoot, "vendoring/.elftia-work/dist-runtime"));
       assert.equal(options.surfaceDir, path.join(options.runtimeDir, "surface"));
       assert.equal(options.packManifest, path.join(outputRoot, "vendoring/.elftia-work/runtime-bundle-manifest.json"));

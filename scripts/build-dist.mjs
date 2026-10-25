@@ -94,6 +94,15 @@ export async function buildDist(options = {}) {
     repoRoot = selection.sourceRoot;
   }
   await assertVendorPresent(repoRoot);
+  const authoring = JSON.parse(await readFile(join(repoRoot, 'elftia-plugin.json'), 'utf8'));
+  const [major, minor, patch] = authoring.version.split('.').map(Number);
+  if (major > 0 || minor > 6 || (minor === 6 && patch >= 7)) {
+    try { await stat(join(repoRoot, 'prebuilds/win32-x64/decoder/decoder-manifest.json')); }
+    catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      throw new Error('Rocut >= 0.6.7 requires the verified bundled offline decoder closure. Use npm run build:production with explicit pinned upstream/surface/WASM inputs; legacy vendor-only npm run build cannot produce a complete production package.');
+    }
+  }
   const provenance = await verifyVendorAgainstProvenance(
     join(repoRoot, "vendor"),
   );
@@ -117,7 +126,7 @@ if (invokedPath === import.meta.url) {
   try {
     const argv = process.argv.slice(2);
     const flag = name => { const index = argv.indexOf(`--${name}`); return index < 0 ? undefined : argv[index + 1]; };
-    const result = await buildDist({ runtimeDir: flag("runtime-dir"), surfaceDir: flag("surface-dir"), packManifest: flag("pack-manifest"), licenseFile: flag("license-file"), outputRoot: flag("output-root"), toolchainDir: flag("toolchain-dir"), toolchainEngines: flag("toolchain-engines")?.split(","), platformTarget: flag("platform-target") });
+    const result = await buildDist({ runtimeDir: flag("runtime-dir"), surfaceDir: flag("surface-dir"), packManifest: flag("pack-manifest"), licenseFile: flag("license-file"), vendorProvenanceFile: flag("vendor-provenance-file"), outputRoot: flag("output-root"), toolchainDir: flag("toolchain-dir"), toolchainEngines: flag("toolchain-engines")?.split(","), platformTarget: flag("platform-target") });
     console.info(
       result.selection
         ? `build-dist: selected vendor OK (${result.provenance.fileCount} files; HEAD ${result.selection.facts.repoHead}, dirty=${result.selection.facts.dirty}; not pin-only)`
