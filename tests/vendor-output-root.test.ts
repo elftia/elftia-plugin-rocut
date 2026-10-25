@@ -9,6 +9,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { lstatSync, realpathSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -21,7 +22,7 @@ const links: string[] = [];
 const identities = new Map<string, { dev: number; ino: number }>();
 async function fixture() {
   const root = await mkdtemp(
-    path.join(path.parse(process.cwd()).root, "rocut-output-test-"),
+    path.join(realpathSync.native(tmpdir()), "rocut-output-test-"),
   );
   roots.push(root);
   identities.set(root, lstatSync(root));

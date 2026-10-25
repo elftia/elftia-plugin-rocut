@@ -119,7 +119,7 @@ describe("artifact mapping", () => {
     expect(assertRocutPackageBudget({ entries: Array.from({ length: 4096 }, () => ({ path: "fixture", size: 0 })) }).fileCount).toBe(4096);
     expect(() => assertRocutPackageBudget({ entries: Array.from({ length: 4097 }, () => ({ path: "fixture", size: 0 })) })).toThrow(/4096 archive entries/);
   });
-  it("admits node_modules only inside an exact licensed toolchain closure", async () => {
+  it.skipIf(process.platform !== "win32" || process.arch !== "x64")("admits node_modules only inside an exact licensed toolchain closure", async () => {
     const source = await buildFakeTree();
     const toolchain = path.join(await scratch(), "toolchain");
     const packages: Record<string, { version: string; integrity: string }> = {};
@@ -153,6 +153,14 @@ describe("artifact mapping", () => {
     await writeFile(path.join(source, "elftia-plugin.json"), JSON.stringify(candidateManifest));
     await writeFile(path.join(source, "prebuilds/win32-x64/toolchain/node_modules/acorn/extra.js"), "undeclared");
     await expect(validateRocutTree(source)).rejects.toThrow(/pins mismatch|undeclared/);
+  });
+
+  it.skipIf(process.platform === "win32" && process.arch === "x64")("rejects a Windows toolchain projection on a different host before creating output", async () => {
+    const parent = await scratch();
+    const target = path.join(parent, "toolchain");
+    await expect(projectToolchainPrebuild(path.join(parent, "missing-source"), target, "win32-x64"))
+      .rejects.toThrow("prebuild projection requires matching host target");
+    expect(existsSync(target)).toBe(false);
   });
 
   it("names every shipped path explicitly instead of excluding", () => {
