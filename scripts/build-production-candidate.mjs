@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { vendorRocut } from "./vendor-rocut.mjs";
-import { prepareProductionToolchain } from "./prepare-production-toolchain.mjs";
+import { prepareProductionToolchain, validateProductionToolchainInputs } from "./prepare-production-toolchain.mjs";
 import { buildDist } from "./build-dist.mjs";
 import { validateToolchainClosure } from "./toolchain-closure.mjs";
 import { inspectOfflineDecoderInputs, assertDisjointDecoderPaths, assertOrdinaryPath } from './offline-decoder-inputs.mjs';
@@ -14,6 +14,8 @@ const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 
 /** Normal pin-checked pack -> verified source closure -> isolated candidate. */
 export async function buildProductionCandidate(options, ports = {}) {
+  // Test-only metadata root; CLI inputs never select producer pins.
+  const sourceRepo = ports.repoRoot ?? repo;
   const { outputRoot, rocutRoot, surfaceDirectory, wasmPackageDirectory } = options;
   assert([outputRoot, rocutRoot, surfaceDirectory, wasmPackageDirectory].every(value => typeof value === "string" && path.isAbsolute(value)), "explicit absolute production paths required");
   await assertOrdinaryPath(path.dirname(outputRoot));
@@ -26,11 +28,11 @@ export async function buildProductionCandidate(options, ports = {}) {
     assertDisjointDecoderPaths(outputRoot, options.toolchainDir);
     await (ports.validateToolchain ?? validateToolchainClosure)(options.toolchainDir);
   }
-  assertDisjointDecoderPaths(outputRoot, path.join(repo, 'build-inputs/offline-decoders'));
-  if (options.offlineDecoderInputs !== undefined) {
-    const inspected = await inspectOfflineDecoderInputs(repo, options.offlineDecoderInputs);
-    assertDisjointDecoderPaths(outputRoot, inspected.identity.archiveDirectory);
-  }
+  assertDisjointDecoderPaths(outputRoot, path.join(sourceRepo, 'build-inputs/offline-decoders'));
+  const inspected = await inspectOfflineDecoderInputs(sourceRepo, options.offlineDecoderInputs);
+  assertDisjointDecoderPaths(outputRoot, inspected.identity.archiveDirectory);
+  if (options.toolchainDir === undefined)
+    await validateProductionToolchainInputs(path.join(sourceRepo, 'build-inputs/toolchain'));
   await mkdir(outputRoot);
   const vendoring = path.join(outputRoot, "vendoring");
   const vendor = await (ports.vendor ?? vendorRocut)({

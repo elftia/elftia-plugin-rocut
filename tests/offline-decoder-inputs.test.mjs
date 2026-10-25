@@ -40,6 +40,25 @@ test('external archives use only producer pins/notices, retaining local input id
   assert.equal(compatible.manifestSha256, out.manifestSha256);
 });
 
+test('production validates missing default archives and toolchain inputs before vendoring or installing', async () => {
+  const f = await fixture();
+  for (const name of ['upstream', 'surface', 'wasm']) await mkdir(path.join(f.root, name));
+  const options = {
+    outputRoot: path.join(f.root, 'production-output'), rocutRoot: path.join(f.root, 'upstream'),
+    surfaceDirectory: path.join(f.root, 'surface'), wasmPackageDirectory: path.join(f.root, 'wasm'),
+  };
+  let invoked = 0;
+  const ports = { repoRoot: f.repo, vendor() { invoked++; throw new Error('must not vendor'); }, toolchain() { invoked++; throw new Error('must not install'); } };
+  await assert.rejects(buildProductionCandidate(options, ports), { code: 'ENOENT' });
+  await assert.rejects(lstat(options.outputRoot), { code: 'ENOENT' });
+  assert.equal(invoked, 0);
+  // Once archives are present, absent portable toolchain metadata must fail just as early.
+  for (const file of ['decoder.zip', 'source.tar.gz']) await copyFile(path.join(f.inputs, file), path.join(f.metadata, file));
+  await assert.rejects(buildProductionCandidate(options, ports), { code: 'ENOENT' });
+  await assert.rejects(lstat(options.outputRoot), { code: 'ENOENT' });
+  assert.equal(invoked, 0);
+});
+
 test('missing archive, hash drift and relative input fail without creating output', async () => {
   const f = await fixture();
   const missing = path.join(f.root, 'missing'); await mkdir(missing);
