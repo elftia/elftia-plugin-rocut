@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, lstat } from "node:fs/promises";
 import path from "node:path";
 import { ownedTemp } from "./owned-temp.mjs";
 import { buildProductionCandidate } from "../scripts/build-production-candidate.mjs";
@@ -9,6 +9,7 @@ test("normal production assembly consumes only this fresh vendor's runtime, mani
   const root = await ownedTemp("rocut-normal-production-");
   const outputRoot = path.join(root, "output");
   const toolchain = path.join(root, "toolchain"); await mkdir(toolchain);
+  for (const name of ['upstream', 'surface', 'wasm']) await mkdir(path.join(root, name));
   await writeFile(path.join(toolchain, "closure-manifest.json"), "{}\n");
   let verified = false;
   const head = "1".repeat(40);
@@ -37,4 +38,17 @@ test("normal production assembly consumes only this fresh vendor's runtime, mani
   });
   assert.equal(result.facts.upstreamCommit, head);
   assert.equal(result.facts.candidate.relativePath, "candidate/dist/rocut");
+});
+
+test('invalid explicit production directories or toolchain fail before output/vendor/install', async () => {
+  const root = await ownedTemp('rocut-production-preflight-');
+  for (const name of ['upstream', 'surface', 'wasm', 'toolchain']) await mkdir(path.join(root, name));
+  const options = { outputRoot: path.join(root, 'output'), rocutRoot: path.join(root, 'upstream'), surfaceDirectory: path.join(root, 'surface'), wasmPackageDirectory: path.join(root, 'wasm'), toolchainDir: path.join(root, 'toolchain') };
+  let vendorCalls = 0, installCalls = 0;
+  const ports = { vendor() { vendorCalls++; }, toolchain() { installCalls++; } };
+  for (const invalid of [{ ...options, surfaceDirectory: path.join(root, 'absent') }, options]) {
+    await assert.rejects(buildProductionCandidate(invalid, ports));
+    await assert.rejects(lstat(options.outputRoot), { code: 'ENOENT' });
+  }
+  assert.equal(vendorCalls, 0); assert.equal(installCalls, 0);
 });

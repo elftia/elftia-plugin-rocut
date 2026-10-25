@@ -17,6 +17,15 @@ export async function buildProductionCandidate(options, ports = {}) {
   const { outputRoot, rocutRoot, surfaceDirectory, wasmPackageDirectory } = options;
   assert([outputRoot, rocutRoot, surfaceDirectory, wasmPackageDirectory].every(value => typeof value === "string" && path.isAbsolute(value)), "explicit absolute production paths required");
   await assertOrdinaryPath(path.dirname(outputRoot));
+  for (const input of [rocutRoot, surfaceDirectory, wasmPackageDirectory]) {
+    await assertOrdinaryPath(input);
+    assertDisjointDecoderPaths(outputRoot, input);
+  }
+  if (options.toolchainDir !== undefined) {
+    await assertOrdinaryPath(options.toolchainDir);
+    assertDisjointDecoderPaths(outputRoot, options.toolchainDir);
+    await (ports.validateToolchain ?? validateToolchainClosure)(options.toolchainDir);
+  }
   assertDisjointDecoderPaths(outputRoot, path.join(repo, 'build-inputs/offline-decoders'));
   if (options.offlineDecoderInputs !== undefined) {
     const inspected = await inspectOfflineDecoderInputs(repo, options.offlineDecoderInputs);
