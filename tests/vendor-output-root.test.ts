@@ -85,9 +85,15 @@ it("keeps legacy roots and rejects relative, existing, overlapping or reused fre
       f.upstream,
     ),
   ).toThrow(/skip-pack/);
+  await mkdir(path.join(f.upstream, "script"));
+  await writeFile(
+    path.join(f.upstream, "script/pack-runtime.mjs"),
+    'throw new Error("fixture pack-runtime must never execute");\n',
+  );
   await expect(
-    vendorRocut({ outputRoot: f.outputRoot, skipPack: true }),
+    vendorRocut({ rocutRoot: f.upstream, outputRoot: f.outputRoot, skipPack: true }),
   ).rejects.toThrow(/skip-pack/);
+  await expect(readFile(f.outputRoot)).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 it("rejects Surface and WASM overlap without creating output", async () => {
