@@ -120,9 +120,9 @@ describe("manifest", () => {
     expect(manifest.kind).toBe("app-extension");
     expect(manifest.contributes.main).toMatchObject({
       entry: "index.cjs",
-      requiredMajor: 1,
-      requiredMinor: 77,
-      builtAgainst: "1.77.0",
+      requiredMajor: 2,
+      requiredMinor: 1,
+      builtAgainst: "2.1.0",
     });
     expect(manifest.contributes.main.checksum).toMatch(/^sha512-[A-Za-z0-9+/]{86}==$/u);
     expect(manifest.permissions).toContain("host:tool-hosts");
