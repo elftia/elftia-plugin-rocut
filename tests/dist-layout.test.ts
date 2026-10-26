@@ -68,9 +68,9 @@ async function buildFakeTree(): Promise<string> {
         main: {
           entry: "index.cjs",
           checksum: sha512Text(MAIN_FIXTURE),
-          requiredMajor: 1,
-          requiredMinor: 77,
-          builtAgainst: "1.77.0",
+          requiredMajor: 2,
+          requiredMinor: 1,
+          builtAgainst: "2.1.0",
         },
         agent: {
           skills: [{ id: "rocut-studio", path: "./skills/rocut-studio" }],
@@ -271,13 +271,13 @@ describe("trademark gate", () => {
 });
 
 describe("install-tree validation fails closed", () => {
-  it.each([51, 76, 78])("rejects an ABI minor other than current77: %s", async (minor) => {
+  it.each([0, 2, 77])("rejects an ABI minor other than current 2.1: %s", async (minor) => {
     const root = await buildFakeTree();
     const file = path.join(root, "elftia-plugin.json");
     const manifest = JSON.parse(await readFile(file, "utf8"));
     manifest.contributes.main.requiredMinor = minor;
     await writeFile(file, JSON.stringify(manifest));
-    await expect(validateRocutTree(root)).rejects.toThrow("manifest main requiredMinor must be 77");
+    await expect(validateRocutTree(root)).rejects.toThrow("manifest main requiredMinor must be 1");
   });
   it("accepts a structurally valid tree", async () => {
     const root = await buildFakeTree();
@@ -299,18 +299,20 @@ describe("install-tree validation fails closed", () => {
     await expect(validateRocutTree(root)).rejects.toThrow(/ENOENT/);
     const manifest = JSON.parse(await readFile(path.join(root, 'elftia-plugin.json'), 'utf8'));
     expect(manifest.contributes.main.checksum).toBe(sha512Text(await readFile(path.join(root, 'main/index.cjs'), 'utf8')));
-    expect(manifest.contributes.main.requiredMinor).toBe(77);
-    expect(manifest.contributes.main.builtAgainst).toBe('1.77.0');
+    expect(manifest.contributes.main.requiredMajor).toBe(2);
+    expect(manifest.contributes.main.requiredMinor).toBe(1);
+    expect(manifest.contributes.main.builtAgainst).toBe('2.1.0');
   });
 
-  it("rejects the obsolete Host API 1.51 requirement", async () => {
+  it("rejects the obsolete Host API 1.77 requirement", async () => {
     const root = await buildFakeTree();
     const manifest = JSON.parse(
       await readFile(path.join(root, "elftia-plugin.json"), "utf8"),
     );
-    manifest.contributes.main.requiredMinor = 51;
+    manifest.contributes.main.requiredMajor = 1;
+    manifest.contributes.main.requiredMinor = 77;
     await writeFile(path.join(root, "elftia-plugin.json"), JSON.stringify(manifest));
-    await expect(validateRocutTree(root)).rejects.toThrow("requiredMinor must be 77");
+    await expect(validateRocutTree(root)).rejects.toThrow("requiredMajor must be 2");
   });
 
   it("ships fixed Particle and Liquid sidecars unchanged through the artifact mapping", async () => {

@@ -412,14 +412,14 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     main?.checksum === sha512(mainBytes),
     "manifest main checksum must match main/index.cjs",
   );
-  assert(main?.requiredMajor === 1, "manifest main requiredMajor must be 1");
-  assert(main?.requiredMinor === 77, "manifest main requiredMinor must be 77");
+  assert(main?.requiredMajor === 2, "manifest main requiredMajor must be 2");
+  assert(main?.requiredMinor === 1, "manifest main requiredMinor must be 1");
   const [major, minor, patch] = manifest.version.split('.').map(Number);
   if (major > 0 || minor > 6 || (minor === 6 && patch >= 7))
     await verifyOfflineDecoders(treeRoot);
   assert(
-    typeof main?.builtAgainst === "string" && main.builtAgainst.length > 0,
-    "manifest main builtAgainst missing",
+    main?.builtAgainst === "2.1.0",
+    "manifest main builtAgainst must be 2.1.0",
   );
   assert(
     Array.isArray(manifest.permissions) &&
