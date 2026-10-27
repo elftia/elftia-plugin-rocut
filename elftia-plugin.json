@@ -1,6 +1,6 @@
 {
   "name": "rocut",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "kind": "app-extension",
   "license": "MIT",
   "permissions": [
