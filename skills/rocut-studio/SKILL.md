@@ -5,7 +5,7 @@ description: Drive Rocut through its bundled CLI and Creator Host production too
 
 # rocut video editor (via the rocut CLI)
 
-In a Creator Studio session, use `initialize_production` to prepare the registered native Host and its hidden renderer. Use `capture_representative` for revision-pinned frames and `production_plan_rocut` / `production_start` for short exports. These routes own their rendering surface; no user Chrome connection or manual editor click is needed. If these capabilities are unavailable, report the installation gap and keep the representative gate incomplete. The standalone CLI surface instructions below apply only outside that Host route.
+In a Creator Studio session, use the current `elftia-creator` task tools. Read each function's live schema before calling it: `read_workflow_handoff` reads onboarding and retained progress, `init_mv_project` prepares new music and the editable timeline, `place_timeline_materials` adds visuals to that same timeline, `preview_author_timeline` captures real frames, and `render_author_timeline` exports all/shots/range. Observe or recover the original delivery with `observe_delivery` / `control_delivery`; do not reinitialize an existing project. These routes own the native runtime and renderer; no user Chrome connection or manual editor click is needed. A representative excerpt is optional, not a gate requiring another approval for an authorized full film. Check the negotiated capabilities before reporting an installation gap. The standalone CLI instructions below apply to direct editor tasks outside this Creator route.
 
 You operate rocut through its CLI — the sole automation surface rocut ships
 (rocut deliberately ships no MCP). The user watches in the live editor; you
