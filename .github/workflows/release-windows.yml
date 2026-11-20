@@ -46,6 +46,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24.15.0
+      - name: Test the producer using the runner's physical temporary directory
+        working-directory: producer
+        run: |
+          # The Windows image sets TEMP to an 8.3 alias. Use the long path for
+          # every subsequent child so the producer's physical-path checks apply.
+          $tempDir = node -p "require('node:fs').realpathSync.native(process.env.RUNNER_TEMP)"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $env:TEMP = $tempDir
+          $env:TMP = $tempDir
+          "TEMP=$tempDir" >> $env:GITHUB_ENV
+          "TMP=$tempDir" >> $env:GITHUB_ENV
+          npm ci --ignore-scripts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm test
       - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
         with:
           bun-version: 1.2.18
@@ -80,10 +94,6 @@ jobs:
       - name: Build and verify the pinned production candidate
         working-directory: producer
         run: |
-          npm ci --ignore-scripts
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          npm test
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $upstream = (Resolve-Path ../upstream).Path
           $out = Join-Path $env:RUNNER_TEMP 'candidate'
           node scripts/build-production-candidate.mjs --output-root $out --rocut $upstream --surface-dir "$env:RUNNER_TEMP/surface" --wasm-package-dir "$upstream/rust/wasm/pkg"
