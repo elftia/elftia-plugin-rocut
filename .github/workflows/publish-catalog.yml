@@ -1,0 +1,38 @@
+name: Sync signed release to the official catalog
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+    secrets:
+      ELFTIA_PUBLISHER_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published stable release tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  catalog:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+      - name: Import and verify the immutable GitHub asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ELFTIA_PUBLISHER_TOKEN: ${{ secrets.ELFTIA_PUBLISHER_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/publish-catalog-release.mjs

@@ -192,16 +192,11 @@ jobs:
             printf '%s\n' 'Windows x64 package for Elftia 0.2.8 or later. Agent editing uses the bundled RoCut CLI. For media operations, install FFmpeg and FFprobe on PATH or configure the tools explicitly.' > producer-release-notes.md
             gh release create "$TAG" signed/rocut.epkg signed/rocut.json --verify-tag --title "RoCut ${TAG#v} (Windows x64)" --notes-file producer-release-notes.md
           fi
-      - name: Submit the signed package to the official catalog
-        shell: bash
-        env:
-          PUBLISHER_TOKEN: ${{ secrets.ELFTIA_PUBLISHER_TOKEN }}
-        run: |
-          set -euo pipefail
-          curl --silent --show-error --fail-with-body --request POST \
-            --header "Authorization: Bearer $PUBLISHER_TOKEN" \
-            --form 'file=@signed/rocut.epkg' --form 'slug=rocut' \
-            --form "name=$(jq -r .displayName bundle/elftia-plugin.json)" \
-            --form "version=${TAG#v}" --form 'pluginKind=app-extension' --form 'codeBearing=true' \
-            --form "minElftiaVersion=$(jq -er .minElftiaVersion bundle/elftia-plugin.json)" \
-            https://api.elftia.com/api/v1/marketplace/plugin/publish
+
+  catalog:
+    needs: publish
+    uses: ./.github/workflows/publish-catalog.yml
+    with:
+      tag: ${{ inputs.tag }}
+    secrets:
+      ELFTIA_PUBLISHER_TOKEN: ${{ secrets.ELFTIA_PUBLISHER_TOKEN }}
