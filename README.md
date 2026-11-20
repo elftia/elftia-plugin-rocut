@@ -3,18 +3,18 @@
 The rocut skill plugin for Elftia. Drives the rocut agent-first video editor
 (T3 topology: local backend + Web Pane) through its CLI.
 
-Producer version: **0.6.7, offline decoder candidate**. Promotion and installed Electron
-acceptance remain separate review steps; a version update alone is not release approval.
-The retained 0.5.0 artifacts below are historical.
+The 0.7.5 default package uses system FFmpeg and ffprobe. Timeline editing works
+without either tool. From the installed package, run `node main/rocut.cjs doctor --json`
+in Elftia, Codex or Claude Code. Add `--require media-tools`, `--require segment-mp4`
+or `--require segment-webm` to get a nonzero exit for an unavailable capability.
+The segment checks cover encoders for native segment assembly with audio. An ordinary
+browser export has its own renderer and capability requirements.
 
-The supported Windows production package now includes a pinned LGPL FFmpeg/ffprobe
-and DLL closure. Use `npm run build:production -- --output-root <fresh-absolute-dir>
---rocut <pinned-checkout> --surface-dir <built-surface> --wasm-package-dir <built-wasm>`
-for the formal production path. It verifies the fixed upstream revision and archived
-decoder inputs before building the complete platform candidate. A generic `npm run build`
-with only a legacy vendor tree intentionally fails closed when this decoder closure is
-absent. See [offline decoder build inputs](build-inputs/offline-decoders/README.md)
-for archived sources, licenses, exact hashes and reproducibility scope.
+Build a Windows candidate with `npm run build:production -- --output-root <fresh-absolute-dir>
+--rocut <pinned-checkout> --surface-dir <built-surface> --wasm-package-dir <built-wasm>`.
+For a self-contained media toolchain, add `--offline-decoder-inputs <absolute-archive-directory>`.
+That profile keeps the pinned executables, DLLs, source archives and integrity checks.
+See the [offline decoder build inputs](build-inputs/offline-decoders/README.md).
 
 The **0.5.0 native motion text and JIZURA baseline** ships the built rocut runtime,
 its WebAssembly core and the prebuilt editor surface, and runs on Elftia's
@@ -259,22 +259,16 @@ without this optional capture service.
 
 ### Optional programmatic engine and native decoder configuration
 
-HyperFrames/Remotion compilation and native video decoding require separately
-provisioned tools. The epkg includes Rocut's editor/runtime, not the complete
-engine toolchain or FFmpeg binaries. Configure these absolute paths in the
-environment used to start Elftia:
+Configure optional absolute paths in the environment used to start Elftia or the portable CLI.
 
 - `ROCUT_ENGINE_TOOLCHAIN_DIR`: the prepared Rocut-compatible engine toolchain.
 - `ROCUT_NATIVE_FFMPEG_PATH`: the FFmpeg executable.
 - `ROCUT_NATIVE_FFPROBE_PATH`: the FFprobe executable.
 
-The plugin explicitly forwards only these three settings to the restricted
-Tool Host launcher. It preserves absent and empty settings and never guesses a
-developer checkout or forwards unrelated environment variables. Restart Elftia
-after changing launch configuration. A configured path alone is not a health
-check: compilation/decoding must still validate and successfully use the tools.
-Ordinary editing does not require these optional tools. Automatic provisioning
-and a persistent settings UI are not implemented by this configuration bridge.
+Configure the two media paths together, or leave both unset to discover a pair in
+one absolute PATH directory. An invalid override disables media tools until corrected.
+After installing a compatible pair, run the doctor and restart the standalone host
+or Elftia so it registers the new paths. Different agent hosts can share one installation.
 
 This is not a vendor/dist/installed-plugin update. Deploy matching host and
 Rocut runtime builds before claiming installed acceptance. See the Rocut source

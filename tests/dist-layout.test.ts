@@ -79,6 +79,7 @@ async function buildFakeTree(): Promise<string> {
     }),
   );
   await writeFile(path.join(root, "main/index.cjs"), MAIN_FIXTURE);
+  await writeFile(path.join(root, "main/rocut.cjs"), "// portable entry\n");
   await writeFile(path.join(root, "skills/rocut-studio/SKILL.md"), "# skill\n");
   await mkdir(path.join(root, "skills/rocut-studio/references"), { recursive: true });
   for (const name of ["agent-editing", "media-import"]) {
@@ -167,6 +168,7 @@ describe("artifact mapping", () => {
     expect(ARTIFACT_MAPPING.map((rule) => rule.source)).toEqual([
       "elftia-plugin.json",
       "main/index.cjs",
+      "main/rocut.cjs",
       "skills/rocut-studio/SKILL.md",
       "skills/rocut-studio/references/agent-editing.md",
       "skills/rocut-studio/references/media-import.md",
@@ -283,10 +285,10 @@ describe("install-tree validation fails closed", () => {
     const root = await buildFakeTree();
     const result = await validateRocutTree(root);
     expect(result.manifest.name).toBe("rocut");
-    expect(result.inventory.fileCount).toBe(14);
+    expect(result.inventory.fileCount).toBe(15);
   });
 
-  it("requires the pinned decoder closure with the actual committed manifest and main checksum", async () => {
+  it("accepts a system build without decoders and rejects a stripped offline build", async () => {
     const root = await buildFakeTree();
     await writeFile(
       path.join(root, "elftia-plugin.json"),
@@ -296,12 +298,19 @@ describe("install-tree validation fails closed", () => {
       path.join(root, "main/index.cjs"),
       await readFile(path.join(repoRoot, "main/index.cjs")),
     );
-    await expect(validateRocutTree(root)).rejects.toThrow(/ENOENT/);
+    await validateRocutTree(root);
     const manifest = JSON.parse(await readFile(path.join(root, 'elftia-plugin.json'), 'utf8'));
     expect(manifest.contributes.main.checksum).toBe(sha512Text(await readFile(path.join(root, 'main/index.cjs'), 'utf8')));
     expect(manifest.contributes.main.requiredMajor).toBe(2);
     expect(manifest.contributes.main.requiredMinor).toBe(1);
     expect(manifest.contributes.main.builtAgainst).toBe('2.1.0');
+    const { bundledDecoderEntry } = await import('../scripts/dist-layout.mjs');
+    const offline = bundledDecoderEntry(await readFile(path.join(root, 'main/index.cjs'), 'utf8'));
+    await writeFile(path.join(root, 'main/index.cjs'), offline);
+    await expect(validateRocutTree(root)).rejects.toThrow(/checksum/);
+    manifest.contributes.main.checksum = sha512Text(offline);
+    await writeFile(path.join(root, 'elftia-plugin.json'), JSON.stringify(manifest));
+    await expect(validateRocutTree(root)).rejects.toThrow(/ENOENT/);
   });
 
   it("rejects the obsolete Host API 1.77 requirement", async () => {
@@ -329,7 +338,7 @@ describe("install-tree validation fails closed", () => {
     const staged = path.join(await scratch(), "staged");
     await copyInventory(root, inventory, staged);
     const result = await validateRocutTree(staged, inventory);
-    expect(result.inventory.fileCount).toBe(18);
+    expect(result.inventory.fileCount).toBe(19);
     for (const name of sidecars) {
       expect(await readFile(path.join(staged, "vendor/run", name))).toEqual(
         await readFile(path.join(root, "vendor/run", name)),

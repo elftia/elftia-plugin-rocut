@@ -15,8 +15,8 @@ All delivered text is canonicalized to LF before inventory and ledger hashing,
 matching the Host packaging contract. Executables, DLLs and source archives keep
 their original binary bytes. LF and CRLF input metadata must produce the same ledger.
 
-The production build automatically performs this projection alongside the Windows
-toolchain. The ledger SHA-256 is pinned in `main/index.cjs`, itself protected by the
+The optional offline build performs this projection alongside the Windows
+toolchain. The default build uses external tools. The ledger SHA-256 is pinned in `main/index.cjs`, itself protected by the
 plugin manifest checksum and official package inventory. On activation, asynchronous
 streaming verification checks the full closure and ordinary canonical paths before
 registering the Tool Host. Each activation verifies bytes anew; no mtime cache or
@@ -25,7 +25,7 @@ files prevent registration. Updating these build inputs requires reviewing the
 source/notice/configuration, refreshing the pinned ledger digest, and updating the
 main checksum before building a new plugin version.
 
-When archives are outside this directory, append
+To build the offline profile, append
 `--offline-decoder-inputs <absolute-archive-directory>` to the existing
 `npm run build:production -- ...` command. The same flag is supported by the
 selected-input `build-dist.mjs` route and by
@@ -34,7 +34,8 @@ Only the archive bytes come from that directory: `provenance.json`, `NOTICE.txt`
 and `build-configuration.txt` always come from this producer checkout. Names,
 sizes and SHA-256 must match; links, redirected ancestors and overlapping outputs
 are rejected. Explicit invalid input fails before production vendoring/toolchain
-work. Omitting the flag retains this directory as the default archive source.
+work. Omitting the flag in production or selected builds selects system tools.
+The standalone archive preparation script defaults to this directory.
 
 Selected provenance records the verified local input location and archive hashes;
 the location is not a portable release source. Preserve the artifact-store identity

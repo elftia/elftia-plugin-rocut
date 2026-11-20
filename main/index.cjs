@@ -9,6 +9,7 @@ const { createHash } = require('node:crypto');
 const MANIFEST = require('../elftia-plugin.json');
 
 const TOOL_ID = 'rocut';
+const DECODER_SOURCE = 'system';
 const PROJECT_SENTINEL = '.elftia-rocut-project';
 const CAPABILITY_ID = 'atelier.tool-host.rocut';
 
@@ -149,6 +150,44 @@ async function verifyOfflineDecoders(pluginRoot) {
   return { ROCUT_NATIVE_FFMPEG_PATH: path.join(root, 'ffmpeg.exe'), ROCUT_NATIVE_FFPROBE_PATH: path.join(root, 'ffprobe.exe') };
 }
 
+function absoluteToolPath(file) {
+  return typeof file === 'string' && path.isAbsolute(file) &&
+    (process.platform !== 'win32' || path.parse(file).root.length > 1);
+}
+
+async function executable(file) {
+  if (!absoluteToolPath(file)) return undefined;
+  try {
+    const resolved = await fs.realpath(file);
+    if (!(await fs.stat(resolved)).isFile()) return undefined;
+    await fs.access(resolved, require('node:fs').constants.X_OK);
+    return resolved;
+  } catch { return undefined; }
+}
+
+// Resolve tools in the caller's environment before the restricted Tool Host starts.
+// Never execute candidates during activation or search relative PATH entries.
+async function decoderEnvironment(pluginRoot, env = process.env) {
+  const source = DECODER_SOURCE;
+  if (source === 'bundled') return { source, env: await verifyOfflineDecoders(pluginRoot) };
+  const names = ['ROCUT_NATIVE_FFMPEG_PATH', 'ROCUT_NATIVE_FFPROBE_PATH'];
+  const suffix = process.platform === 'win32' ? '.exe' : '';
+  const binaries = ['ffmpeg' + suffix, 'ffprobe' + suffix];
+  const explicit = names.some(name => env[name] !== undefined && env[name] !== '');
+  const search = explicit ? [] : (env.PATH ?? '').split(path.delimiter)
+    .map(dir => dir.replace(/^"([^"]+)"$/, '$1')).filter(absoluteToolPath);
+  const candidates = explicit ? [names.map(name => env[name])] :
+    search.map(dir => binaries.map(name => path.join(dir, name)));
+  for (const candidatesInDir of candidates) {
+    const [ffmpeg, ffprobe] = await Promise.all(candidatesInDir.map(executable));
+    if (ffmpeg && ffprobe && path.relative(path.dirname(ffmpeg), path.dirname(ffprobe)) === '') {
+      return { source, env: { [names[0]]: ffmpeg, [names[1]]: ffprobe, ROCUT_NATIVE_DECODER_SOURCE: 'system' } };
+    }
+  }
+  return { source, env: { ROCUT_NATIVE_DECODER_SOURCE: source }, reason: explicit ? 'Invalid configured pair: set both absolute paths to FFmpeg and ffprobe from the same installation.' :
+    'Install FFmpeg with ffprobe or configure both ROCUT_NATIVE_FFMPEG_PATH and ROCUT_NATIVE_FFPROBE_PATH.' };
+}
+
 async function createDescriptor(options = {}) {
   const pluginRoot = path.resolve(options.pluginRoot || path.join(__dirname, '..'));
   const registryRoot = path.resolve(options.registryRoot || path.join(os.homedir(), '.rocut'));
@@ -160,8 +199,7 @@ async function createDescriptor(options = {}) {
   ]) {
     if (process.env[name] !== undefined) nativeEnvironment[name] = process.env[name];
   }
-  // Decoder identity comes only from the installed, verified package, never PATH or env.
-  Object.assign(nativeEnvironment, await verifyOfflineDecoders(pluginRoot));
+  Object.assign(nativeEnvironment, (await decoderEnvironment(pluginRoot)).env);
 
   return {
     toolId: TOOL_ID,
@@ -268,4 +306,5 @@ module.exports = {
   createCapabilityEndpoint,
   declaredCapability,
   verifyOfflineDecoders,
+  decoderEnvironment,
 };

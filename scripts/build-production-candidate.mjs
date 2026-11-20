@@ -28,9 +28,11 @@ export async function buildProductionCandidate(options, ports = {}) {
     assertDisjointDecoderPaths(outputRoot, options.toolchainDir);
     await (ports.validateToolchain ?? validateToolchainClosure)(options.toolchainDir);
   }
-  assertDisjointDecoderPaths(outputRoot, path.join(sourceRepo, 'build-inputs/offline-decoders'));
-  const inspected = await inspectOfflineDecoderInputs(sourceRepo, options.offlineDecoderInputs);
-  assertDisjointDecoderPaths(outputRoot, inspected.identity.archiveDirectory);
+  if (options.offlineDecoderInputs !== undefined) {
+    assertDisjointDecoderPaths(outputRoot, path.join(sourceRepo, 'build-inputs/offline-decoders'));
+    const inspected = await inspectOfflineDecoderInputs(sourceRepo, options.offlineDecoderInputs);
+    assertDisjointDecoderPaths(outputRoot, inspected.identity.archiveDirectory);
+  }
   if (options.toolchainDir === undefined)
     await validateProductionToolchainInputs(path.join(sourceRepo, 'build-inputs/toolchain'));
   await mkdir(outputRoot);
@@ -59,7 +61,7 @@ export async function buildProductionCandidate(options, ports = {}) {
     buildInputs: {
       threeAssets: digest(await readFile(path.join(repo, "build-inputs/toolchain/three-assets/provenance.json"))),
       compilerReview: digest(await readFile(path.join(repo, "build-inputs/toolchain/compiler-review.json"))),
-      offlineDecoders: digest(await readFile(path.join(repo, "build-inputs/offline-decoders/provenance.json"))),
+      offlineDecoders: options.offlineDecoderInputs === undefined ? null : digest(await readFile(path.join(repo, "build-inputs/offline-decoders/provenance.json"))),
     },
     candidate: { relativePath: path.relative(outputRoot, candidate.target).split(path.sep).join("/"), inventory: candidate.inventory, packageBudget: candidate.packageBudget },
   };

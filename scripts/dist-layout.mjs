@@ -26,6 +26,17 @@ import {
 } from "./runtime-sidecars.mjs";
 
 export const PLUGIN_ID = "rocut";
+// This declaration is inside the manifest-checksummed entry for both profiles.
+const DECODER_PROFILE_LINE = /^const DECODER_SOURCE = '(system|bundled)';$/gm;
+export function bundledDecoderEntry(original) {
+  const profiles = [...original.matchAll(DECODER_PROFILE_LINE)];
+  assert(profiles.length === 1 && profiles[0][1] === 'system', 'expected one system decoder declaration in the producer main entry');
+  return original.replace(DECODER_PROFILE_LINE, "const DECODER_SOURCE = 'bundled';");
+}
+export function requiresLegacyDecoder(version) {
+  const [major, minor, patch] = version.split('.').map(Number);
+  return major === 0 && ((minor === 6 && patch >= 7) || (minor === 7 && patch < 5));
+}
 export const MAX_PLUGIN_EXPANDED_BYTES = 1073741824;
 export function assertRocutPackageBudget(inventory) {
   assert(inventory.entries.length <= 4096, "plugin tree exceeds official 4096 archive entries");
@@ -44,6 +55,7 @@ export { RUN_FILE_PATTERN };
 export const ARTIFACT_MAPPING = Object.freeze([
   { kind: "file", source: "elftia-plugin.json" },
   { kind: "file", source: "main/index.cjs" },
+  { kind: "file", source: "main/rocut.cjs" },
   { kind: "file", source: "skills/rocut-studio/SKILL.md" },
   { kind: "file", source: "skills/rocut-studio/references/agent-editing.md" },
   { kind: "file", source: "skills/rocut-studio/references/media-import.md" },
@@ -158,7 +170,7 @@ export function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-function sha512(bytes) {
+export function sha512(bytes) {
   // Host/plugin-kit LF-law folds CRLF only for non-NUL text. latin1 keeps
   // every other byte exact; lone CR, BOM and binary bytes are not rewritten.
   const canonical =
@@ -415,8 +427,11 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
   assert(main?.requiredMajor === 2, "manifest main requiredMajor must be 2");
   assert(main?.requiredMinor === 1, "manifest main requiredMinor must be 1");
   const [major, minor, patch] = manifest.version.split('.').map(Number);
-  if (major > 0 || minor > 6 || (minor === 6 && patch >= 7))
-    await verifyOfflineDecoders(treeRoot);
+  const hasProfile = major > 0 || minor > 7 || (minor === 7 && patch >= 5);
+  const profiles = [...mainBytes.toString('utf8').matchAll(DECODER_PROFILE_LINE)];
+  if (hasProfile) assert(profiles.length === 1, 'missing or ambiguous decoder profile in main entry');
+  const profile = profiles[0]?.[1];
+  if (requiresLegacyDecoder(manifest.version) || profile === 'bundled') await verifyOfflineDecoders(treeRoot);
   assert(
     main?.builtAgainst === "2.1.0",
     "manifest main builtAgainst must be 2.1.0",
@@ -438,6 +453,7 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
   );
 
   const inventory = await inventoryRegularTree(treeRoot, "rocut install tree");
+  if (hasProfile) assert(inventory.entries.some(entry => entry.path === 'main/rocut.cjs'), 'missing portable rocut CLI');
   for (const requiredPath of REQUIRED_RUNTIME_FILES) {
     assert(
       inventory.entries.some((entry) => entry.path === requiredPath),
@@ -461,7 +477,8 @@ export async function validateRocutTree(treeRoot, expectedInventory = null) {
     assert(JSON.stringify((await readdir(path.join(treeRoot, "prebuilds"))).sort()) === JSON.stringify(["win32-x64"]), "prebuild targets must match supportedPlatforms");
     const prebuildEntries = (await readdir(path.join(treeRoot, "prebuilds/win32-x64"))).sort();
     assert(JSON.stringify(prebuildEntries) === JSON.stringify(["decoder", "toolchain"]) || JSON.stringify(prebuildEntries) === JSON.stringify(["toolchain"]), "prebuild target must contain only registered decoder/toolchain");
-    if (prebuildEntries.includes('decoder')) await verifyOfflineDecoders(treeRoot);
+    assert(profile !== 'system' || !prebuildEntries.includes('decoder'), 'system profile must not ship decoder bytes');
+    if (prebuildEntries.includes('decoder') && !hasProfile && !requiresLegacyDecoder(manifest.version)) await verifyOfflineDecoders(treeRoot);
     const validated = await validateToolchainClosure(path.join(treeRoot, "prebuilds/win32-x64/toolchain"));
     assert(validated.closure.projection?.platformTarget === "win32-x64", "prebuild requires explicit platform projection");
   } else assert(!manifest.supportedPlatforms?.length, "supportedPlatforms requires matching prebuilds");

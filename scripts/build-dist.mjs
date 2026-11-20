@@ -16,6 +16,7 @@ import {
   copyInventory,
   inventoryRocutSources,
   PLUGIN_ID,
+  requiresLegacyDecoder,
   validateRocutTree,
   assertRocutPackageBudget,
 } from "./dist-layout.mjs";
@@ -96,8 +97,7 @@ export async function buildDist(options = {}) {
   }
   await assertVendorPresent(repoRoot);
   const authoring = JSON.parse(await readFile(join(repoRoot, 'elftia-plugin.json'), 'utf8'));
-  const [major, minor, patch] = authoring.version.split('.').map(Number);
-  if (major > 0 || minor > 6 || (minor === 6 && patch >= 7)) {
+  if (requiresLegacyDecoder(authoring.version)) {
     try { await stat(join(repoRoot, 'prebuilds/win32-x64/decoder/decoder-manifest.json')); }
     catch (error) {
       if (error.code !== 'ENOENT') throw error;

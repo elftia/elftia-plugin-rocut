@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, mkdir, writeFile, mkdtemp, lstat, realpath, rm } from "node:fs/promises";
 import path from "node:path";
-import { RUN_FILE_PATTERN, inventoryRegularTree, sha256, ARTIFACT_MAPPING } from "./dist-layout.mjs";
+import { RUN_FILE_PATTERN, inventoryRegularTree, sha256, sha512, ARTIFACT_MAPPING, bundledDecoderEntry } from "./dist-layout.mjs";
 import { inventoryVendorTree, readCliSourceInputs, readProvenanceFact, verifyVendorAgainstProvenance } from "./provenance.mjs";
 import { rewriteAssetManifest, assertMotionTextFontNotice, validateSurfaceAssetManifest } from "./vendor-rocut.mjs";
 import { copyToolchainClosure, validateToolchainClosure } from "./toolchain-closure.mjs";
@@ -78,16 +78,27 @@ export async function prepareSelectedSources(repoRoot, options) {
     const source = path.join(repoRoot, rule.source);
     const relative = path.relative(realRepoRoot, await realpath(source));
     assert(relative && relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative), `source artifact escapes producer: ${rule.source}`);
-    await copy(source, path.join(sourceRoot, rule.source));
+    const target = path.join(sourceRoot, rule.source);
+    await copy(source, target);
     sourcePins.push({ path: rule.source, sourceSha256: sha256(await readFile(source)), deliveredSha256: sha256(await readFile(path.join(sourceRoot, rule.source))) });
   }
   let manifestProjection = null;
   if (options.platformTarget) {
     const manifestPath = path.join(sourceRoot, "elftia-plugin.json"), bytes = await readFile(manifestPath);
     const manifest = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    if (options.offlineDecoderInputs !== undefined) {
+      const entry = path.join(sourceRoot, 'main/index.cjs');
+      const original = await readFile(entry, 'utf8');
+      assert.equal(manifest.contributes.main.checksum, sha512(Buffer.from(original)), 'producer main checksum differs');
+      const bundled = Buffer.from(bundledDecoderEntry(original));
+      await writeFile(entry, bundled);
+      manifest.contributes.main.checksum = sha512(bundled);
+      sourcePins.find(pin => pin.path === 'main/index.cjs').deliveredSha256 = sha256(bundled);
+    }
     manifest.supportedPlatforms = [options.platformTarget];
     const projected = Buffer.from(JSON.stringify(manifest, null, 2) + "\n");
     await writeFile(manifestPath, projected);
+    sourcePins.find(pin => pin.path === 'elftia-plugin.json').deliveredSha256 = sha256(projected);
     manifestProjection = { scope: "explicit-local-platform-candidate-not-cross-platform-release", supportedPlatforms: manifest.supportedPlatforms, originalSha256: sha256(bytes), projectedSha256: sha256(projected) };
   }
   const vendor = path.join(sourceRoot, "vendor");
@@ -125,7 +136,9 @@ export async function prepareSelectedSources(repoRoot, options) {
       const deliveryInput = await validateToolchainClosure(deliveryRoot);
       if (!deliveryInput.closure.deliveryNormalization) toolchain = await normalizeSelectedToolchain(deliveryRoot, deliveryInput);
       await validateToolchainClosure(deliveryRoot);
-      offlineDecoders = await prepareOfflineDecoders(path.join(prebuildParent, 'decoder'), repoRoot, options.offlineDecoderInputs);
+      if (options.offlineDecoderInputs !== undefined) {
+        offlineDecoders = await prepareOfflineDecoders(path.join(prebuildParent, 'decoder'), repoRoot, options.offlineDecoderInputs);
+      }
     } finally {
       if (scratch) {
         const current = await lstat(scratch, { bigint: true });

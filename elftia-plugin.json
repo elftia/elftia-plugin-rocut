@@ -1,6 +1,6 @@
 {
   "name": "rocut",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "kind": "app-extension",
   "license": "MIT",
   "permissions": [
@@ -25,7 +25,7 @@
   "contributes": {
     "main": {
       "entry": "index.cjs",
-      "checksum": "sha512-8WFV11uo/rgCNgZ+WuuJ20UeFhVCxl/E1r4mysACxHf+GVodIHGWWtsLjCzQULQRo8N5KIpFS6Y9e/gCUuXjhg==",
+      "checksum": "sha512-PcJvYO6cW0bHYZ2ZfAzQeHbMV7Jn+e0wN3chSd1KVLblhrxRxeDruXGxDbnnBC+tDP/eAyGDSd/IAfD0gPO4qQ==",
       "requiredMajor": 2,
       "requiredMinor": 1,
       "builtAgainst": "2.1.0"

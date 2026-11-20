@@ -9,6 +9,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { prepareOfflineDecoders } from '../scripts/prepare-offline-decoders.mjs';
+import { bundledDecoderEntry } from '../scripts/dist-layout.mjs';
 
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,7 +28,7 @@ async function fixtureMain(pluginRoot: string) {
   }
   const ledger = JSON.stringify({ version: 1, platform: 'win32-x64', files }, null, 2) + '\n';
   await writeFile(path.join(directory, 'decoder-manifest.json'), ledger);
-  const source = await readFile(path.join(repoRoot, 'main/index.cjs'), 'utf8');
+  const source = await readFile(path.join(pluginRoot, 'main/index.cjs'), 'utf8');
   const anchor = /const expectedLedgerSha256 = '[a-f0-9]{64}';/g;
   expect(source.match(anchor)).toHaveLength(1);
   const fixtureSource = source.replace(anchor, `const expectedLedgerSha256 = '${createHash('sha256').update(ledger).digest('hex')}';`);
@@ -41,7 +42,7 @@ async function fixtureMain(pluginRoot: string) {
 beforeAll(async () => {
   root = await mkdtemp(path.join(os.tmpdir(), 'rocut-decoder-test-'));
   await mkdir(path.join(root, 'main'));
-  await copyFile(path.join(repoRoot, 'main/index.cjs'), path.join(root, 'main/index.cjs'));
+  await writeFile(path.join(root, 'main/index.cjs'), bundledDecoderEntry(await readFile(path.join(repoRoot, 'main/index.cjs'), 'utf8')));
   await copyFile(path.join(repoRoot, 'elftia-plugin.json'), path.join(root, 'elftia-plugin.json'));
   main = await fixtureMain(root);
 }, 30000);
@@ -49,6 +50,39 @@ afterAll(async () => { if (root) await rm(root, { recursive: true, force: true }
 afterEach(() => vi.unstubAllEnvs());
 
 describe('rocut installed decoder registration', () => {
+  it('registers a system build without either executable and ignores a partial override', async () => {
+    const external = require(path.join(repoRoot, 'main/index.cjs'));
+    vi.stubEnv('PATH', '');
+    vi.stubEnv('ROCUT_NATIVE_FFMPEG_PATH', undefined);
+    vi.stubEnv('ROCUT_NATIVE_FFPROBE_PATH', undefined);
+    const register = vi.fn();
+    await external.activate({ toolHosts: { register } });
+    expect(register.mock.calls[0][0].launch.env).not.toHaveProperty('ROCUT_NATIVE_FFMPEG_PATH');
+    vi.stubEnv('ROCUT_NATIVE_FFMPEG_PATH', process.execPath);
+    expect((await external.decoderEnvironment(repoRoot)).reason).toMatch(/both absolute paths/);
+    const systemRoot = path.join(root, 'system');
+    await mkdir(path.join(systemRoot, 'main'), { recursive: true });
+    await mkdir(path.join(systemRoot, 'vendor/run'), { recursive: true });
+    for (const name of ['main/index.cjs', 'main/rocut.cjs', 'elftia-plugin.json']) await copyFile(path.join(repoRoot, name), path.join(systemRoot, name));
+    for (const name of ['rocut.mjs', 'opencut_wasm_bg.wasm']) await writeFile(path.join(systemRoot, 'vendor/run', name), 'fixture');
+    const { stdout } = await promisify(execFile)(process.execPath, [path.join(systemRoot, 'main/rocut.cjs'), 'doctor', '--json', '--require', 'edit']);
+    const report = JSON.parse(stdout);
+    expect(report.features.edit.available).toBe(true);
+    expect(report.features['segment-mp4'].available).toBe(false);
+    await expect(promisify(execFile)(process.execPath, [path.join(repoRoot, 'main/rocut.cjs'), 'doctor', '--require', 'media-tools'])).rejects.toMatchObject({ code: 1 });
+  });
+  it('resolves both executable paths from one absolute PATH directory', async () => {
+    const external = require(path.join(repoRoot, 'main/index.cjs'));
+    const bin = path.join(root, 'system bin');
+    await mkdir(bin);
+    const suffix = process.platform === 'win32' ? '.exe' : '';
+    for (const name of ['ffmpeg', 'ffprobe']) {
+      await writeFile(path.join(bin, name + suffix), 'fixture', { mode: 0o755 });
+    }
+    const found = await external.decoderEnvironment(repoRoot, { PATH: ['.', bin].join(path.delimiter) });
+    expect(found.env).toMatchObject({ ROCUT_NATIVE_FFMPEG_PATH: path.join(bin, 'ffmpeg' + suffix), ROCUT_NATIVE_FFPROBE_PATH: path.join(bin, 'ffprobe' + suffix) });
+    expect((await external.decoderEnvironment(repoRoot, { PATH: bin, ROCUT_NATIVE_FFMPEG_PATH: 'relative' })).env).not.toHaveProperty('ROCUT_NATIVE_FFMPEG_PATH');
+  });
   it('keeps the unchanged production verifier closed to the test ledger', async () => {
     const productionMain = require(path.join(root, 'main/index.cjs'));
     await expect(productionMain.createDescriptor()).rejects.toThrow(/pinned integrity/);
@@ -84,7 +118,7 @@ describe('rocut installed decoder registration', () => {
     const realRoot = await mkdtemp(path.join(os.tmpdir(), 'rocut-real-decoder-test-'));
     try {
       await mkdir(path.join(realRoot, 'main'));
-      await copyFile(path.join(repoRoot, 'main/index.cjs'), path.join(realRoot, 'main/index.cjs'));
+      await copyFile(path.join(root, 'main/index.cjs'), path.join(realRoot, 'main/index.cjs'));
       await copyFile(path.join(repoRoot, 'elftia-plugin.json'), path.join(realRoot, 'elftia-plugin.json'));
       await prepareOfflineDecoders(path.join(realRoot, 'prebuilds/win32-x64/decoder'));
       const descriptor = await require(path.join(realRoot, 'main/index.cjs')).createDescriptor(), run = promisify(execFile);

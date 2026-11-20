@@ -40,11 +40,11 @@ test('external archives use only producer pins/notices, retaining local input id
   assert.equal(compatible.manifestSha256, out.manifestSha256);
 });
 
-test('production validates missing default archives and toolchain inputs before vendoring or installing', async () => {
+test('offline production validates requested archives and toolchain inputs before vendoring or installing', async () => {
   const f = await fixture();
   for (const name of ['upstream', 'surface', 'wasm']) await mkdir(path.join(f.root, name));
   const options = {
-    outputRoot: path.join(f.root, 'production-output'), rocutRoot: path.join(f.root, 'upstream'),
+    outputRoot: path.join(f.root, 'production-output'), rocutRoot: path.join(f.root, 'upstream'), offlineDecoderInputs: f.metadata,
     surfaceDirectory: path.join(f.root, 'surface'), wasmPackageDirectory: path.join(f.root, 'wasm'),
   };
   let invoked = 0;

@@ -14,11 +14,15 @@ the surface live-syncs.
 
 ## Environment — this plugin BUNDLES rocut
 
+Elftia, Codex and Claude Code can use the same installed CLI. Timeline reads, edits and drafts need only the editor runtime. Before using native media tools, run `node "$SKILL_DIR/../../main/rocut.cjs" doctor --json`. Use `--require media-tools` to check the FFmpeg/ffprobe executables, or `--require segment-mp4` / `segment-webm` to check the encoders for native segment assembly with audio. Standalone preview and export still require an attached rendering surface.
+
+Prefer an existing compatible pair on PATH. If a requested feature is unavailable, follow its JSON `fix` using the host's permitted installation mechanism. A separate compatible build can coexist with the system version. Set both `ROCUT_NATIVE_FFMPEG_PATH` and `ROCUT_NATIVE_FFPROBE_PATH` to absolute executable paths in the same installation. Re-run the doctor and restart the requesting host (and Elftia for an already registered descriptor). The optional offline build supplies and verifies its own pair.
+
 The plugin ships the built rocut runtime (see `vendor/PROVENANCE.md` for the
 exact upstream commit). Paths below are relative to THIS skill's directory,
 shown in the skill metadata trailer when you load it — call it `$SKILL_DIR`:
 
-- CLI entry: `$SKILL_DIR/../../vendor/run/rocut.mjs`
+- CLI entry: `$SKILL_DIR/../../main/rocut.cjs`
 - Editor surface (for `--static`): `$SKILL_DIR/../../vendor/surface`
 - `vendor/run/chunk-*.js` and `vendor/run/opencut_wasm_bg.wasm` are load-bearing
   SIBLINGS of the entry (a chunk imports the wasm by filename) — never move or
@@ -33,7 +37,7 @@ node --version   # need >= 20; if node is missing/older, tell the user to instal
 Invoke the CLI as `node <entry> <command>`:
 
 ```bash
-CLI="$SKILL_DIR/../../vendor/run/rocut.mjs"
+CLI="$SKILL_DIR/../../main/rocut.cjs"
 node "$CLI" target list
 ```
 
@@ -77,7 +81,7 @@ Keep the Creator Studio session working directory as the project root. The rocut
    project directory or starts one, and prints the same fields either way:
 
    ```bash
-   node $SKILL_DIR/../../vendor/run/rocut.mjs host ensure <project-dir> \
+   node $SKILL_DIR/../../main/rocut.cjs host ensure <project-dir> \
      --static $SKILL_DIR/../../vendor/surface
    ```
 
@@ -137,7 +141,7 @@ Keep the Creator Studio session working directory as the project root. The rocut
    every example below does:
 
    ```bash
-   node $SKILL_DIR/../../vendor/run/rocut.mjs target list   # id / port= / pid= / project= / started=
+   node $SKILL_DIR/../../main/rocut.cjs target list   # id / port= / pid= / project= / started=
    TARGET=<the target id host ensure printed>               # = project-dir basename, sanitized
    ```
 
@@ -157,10 +161,10 @@ motion-text sequence operations, but agents must use the high-level
 
 ```bash
 # read current state first (never guess ids)
-node $SKILL_DIR/../../vendor/run/rocut.mjs read --target "$TARGET"
+node $SKILL_DIR/../../main/rocut.cjs read --target "$TARGET"
 
 # apply a batch (atomic: all-or-nothing; revision-checked)
-node $SKILL_DIR/../../vendor/run/rocut.mjs apply ops.json --target "$TARGET"
+node $SKILL_DIR/../../main/rocut.cjs apply ops.json --target "$TARGET"
 ```
 
 `ops.json` shape:
@@ -371,7 +375,7 @@ intent while reusing its key returns `motion-text-idempotency-conflict`.
 ## Export — turning the timeline into a file
 
 ```bash
-node $SKILL_DIR/../../vendor/run/rocut.mjs export --out ./final-cut.mp4 --target "$TARGET"
+node $SKILL_DIR/../../main/rocut.cjs export --out ./final-cut.mp4 --target "$TARGET"
 # --format mp4|webm (default mp4)  --quality low|medium|high|very_high (default high)
 # --no-audio to skip the audio pass
 ```
@@ -438,7 +442,7 @@ Multi-step or creative changes go through a draft so the user can review in
 the pane before anything is committed:
 
 ```bash
-CLI="$SKILL_DIR/../../vendor/run/rocut.mjs"
+CLI="$SKILL_DIR/../../main/rocut.cjs"
 DRAFT=$(node "$CLI" draft begin --target "$TARGET")
 node "$CLI" draft stage ops.json --draft "$DRAFT" --target "$TARGET"
 node "$CLI" draft approve --draft "$DRAFT" --target "$TARGET"   # or reject / discard

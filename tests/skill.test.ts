@@ -18,9 +18,9 @@ async function skill(): Promise<string> {
 describe("the skill drives the bundled runtime, not a checkout", () => {
   it("invokes the vendored entry with node", async () => {
     const text = await skill();
-    expect(text).toContain("$SKILL_DIR/../../vendor/run/rocut.mjs");
+    expect(text).toContain("$SKILL_DIR/../../main/rocut.cjs");
     expect(text).toContain("$SKILL_DIR/../../vendor/surface");
-    expect(text).toMatch(/node \$SKILL_DIR\/\.\.\/\.\.\/vendor\/run\/rocut\.mjs/);
+    expect(text).toMatch(/node \$SKILL_DIR\/\.\.\/\.\.\/main\/rocut\.cjs/);
   });
 
   it("carries no bun invocation and no rocut-checkout path", async () => {
