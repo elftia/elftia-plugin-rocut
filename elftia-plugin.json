@@ -1,6 +1,7 @@
 {
   "name": "rocut",
   "version": "0.7.5",
+  "minElftiaVersion": "0.2.8",
   "kind": "app-extension",
   "license": "MIT",
   "permissions": [
