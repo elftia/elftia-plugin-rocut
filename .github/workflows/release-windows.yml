@@ -1,0 +1,197 @@
+name: Publish verified Windows package
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag matching the producer manifest (e.g. v0.7.5)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rocut-windows-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: producer
+          persist-credentials: false
+      - name: Resolve the committed upstream pin and validate version
+        id: pin
+        working-directory: producer
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          $version = (Get-Content elftia-plugin.json -Raw | ConvertFrom-Json).version
+          if ($env:TAG -cne "v$version") { throw 'Tag differs from source version' }
+          $pin = (Get-Content upstream.json -Raw | ConvertFrom-Json).commit
+          if ($pin -cnotmatch '^[a-f0-9]{40}$') { throw 'Invalid upstream commit' }
+          "commit=$pin" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+        with:
+          repository: DumoeDss/rocut
+          ref: ${{ steps.pin.outputs.commit }}
+          path: upstream
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+      - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.2.18
+      - name: Install upstream's pinned WASM tools
+        working-directory: upstream
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal --target wasm32-unknown-unknown
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $archive = Join-Path $env:RUNNER_TEMP 'wasm-pack.tar.gz'
+          $name = 'wasm-pack-v0.13.1-x86_64-pc-windows-msvc'
+          Invoke-WebRequest "https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/$name.tar.gz" -OutFile $archive
+          if ((Get-FileHash $archive).Hash -ne '4fd5375c2f85bae92c3e8fb14ad0d27b8fb92e85f4397064d9e66a94a79d6fae') { throw 'wasm-pack digest mismatch' }
+          tar -xzf $archive -C $env:RUNNER_TEMP
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          (Join-Path $env:RUNNER_TEMP $name) >> $env:GITHUB_PATH
+      - name: Compile WASM, verify it and build the editor
+        working-directory: upstream
+        env:
+          OPENCUT_BUN: bun.exe
+        run: |
+          node script/build-wasm.mjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          bun install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run check:wasm
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $env:OPENCUT_PUBLIC_BASE = './'
+          $env:C4_VITE_OUT_DIR = Join-Path $env:RUNNER_TEMP 'surface'
+          $env:ROCUT_SURFACE_WASM_PACKAGE_DIR = (Resolve-Path rust/wasm/pkg).Path
+          Set-Location apps/vite-example
+          bun run build
+      - name: Build and verify the pinned production candidate
+        working-directory: producer
+        run: |
+          npm ci --ignore-scripts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $upstream = (Resolve-Path ../upstream).Path
+          $out = Join-Path $env:RUNNER_TEMP 'candidate'
+          node scripts/build-production-candidate.mjs --output-root $out --rocut $upstream --surface-dir "$env:RUNNER_TEMP/surface" --wasm-package-dir "$upstream/rust/wasm/pkg"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $facts = Join-Path $out 'production-candidate.json'
+          $tree = Join-Path $out (Get-Content $facts -Raw | ConvertFrom-Json).candidate.relativePath
+          node scripts/promote-production-candidate.mjs --candidate $tree --build-facts $facts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node scripts/smoke-agent-cli.mjs --entry (Resolve-Path dist/rocut/main/rocut.cjs).Path
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-windows-package
+          path: |
+            producer/release/${{ steps.pin.outputs.version }}/rocut.epkg
+            producer/release/${{ steps.pin.outputs.version }}/rocut.json
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-windows-package
+          path: verified
+      - uses: actions/checkout@v4
+        with:
+          repository: elftia/elftia
+          ref: 95772ba516fc29d7b8f9c1d379b28ea75dcb9ffa
+          path: signer
+          token: ${{ secrets.ELFTIA_REPO_TOKEN }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/sign-plugin.mts
+            packages/core/src/plugins/install
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+      - name: Verify the Windows build before signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="verified"
+          test "$(jq -r '.id' "$src/rocut.json")" = rocut
+          test "v$(jq -r '.version' "$src/rocut.json")" = "$TAG"
+          echo "$(jq -er '.sha256' "$src/rocut.json")  $src/rocut.epkg" | sha256sum -c -
+          unzip -q "$src/rocut.epkg" -d bundle
+          test ! -e bundle/elftia-plugin.sig.json
+          jq -e --arg tag "$TAG" '.name == "rocut" and ("v"+.version) == $tag and .supportedPlatforms == ["win32-x64"]' bundle/elftia-plugin.json
+          npm install --prefix "$RUNNER_TEMP/tools" --ignore-scripts --no-audit --no-fund tsx@4.20.5 @elftia/plugin-kit@0.2.1
+          echo "$RUNNER_TEMP/tools/node_modules/.bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/tools/node_modules/.bin/elftia-plugin" verify bundle
+      - name: Sign the verified tree with the official publishing key
+        shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.ELFTIA_PLUGIN_SIGNING_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key=$(mktemp)
+          trap 'rm -f "$key"' EXIT
+          printf '%s' "$SIGNING_KEY" | base64 --decode > "$key"
+          unset SIGNING_KEY
+          tsx signer/scripts/sign-plugin.mts sign bundle --key "$key"
+      - name: Verify the signer and pack the signed bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          tsx signer/scripts/sign-plugin.mts verify bundle
+          test "$(jq -r '.keyId' bundle/elftia-plugin.sig.json)" = '18a050a97430c397f800f8c845eee26ee14e069f7fc2b4037eca0288e6f072f1'
+          elftia-plugin pack bundle --out signed
+          echo "$(jq -er '.sha256' signed/rocut.json)  signed/rocut.epkg" | sha256sum -c -
+      - name: Publish the verified commit and immutable asset pair
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh api "repos/$GH_REPO/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            gh api --method POST "repos/$GH_REPO/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA" --silent
+          fi
+          test "$(gh api "repos/$GH_REPO/commits/$TAG" --jq '.sha')" = "$GITHUB_SHA"
+          if gh release view "$TAG" --json url >/dev/null 2>&1; then
+            mkdir existing
+            gh release download "$TAG" --dir existing
+            cmp existing/rocut.epkg signed/rocut.epkg
+            cmp existing/rocut.json signed/rocut.json
+          else
+            printf '%s\n' 'Windows x64 package for Elftia 0.2.8 or later. Agent editing uses the bundled RoCut CLI. For media operations, install FFmpeg and FFprobe on PATH or configure the tools explicitly.' > producer-release-notes.md
+            gh release create "$TAG" signed/rocut.epkg signed/rocut.json --verify-tag --title "RoCut ${TAG#v} (Windows x64)" --notes-file producer-release-notes.md
+          fi
+      - name: Submit the signed package to the official catalog
+        shell: bash
+        env:
+          PUBLISHER_TOKEN: ${{ secrets.ELFTIA_PUBLISHER_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl --silent --show-error --fail-with-body --request POST \
+            --header "Authorization: Bearer $PUBLISHER_TOKEN" \
+            --form 'file=@signed/rocut.epkg' --form 'slug=rocut' \
+            --form "name=$(jq -r .displayName bundle/elftia-plugin.json)" \
+            --form "version=${TAG#v}" --form 'pluginKind=app-extension' --form 'codeBearing=true' \
+            --form "minElftiaVersion=$(jq -er .minElftiaVersion bundle/elftia-plugin.json)" \
+            https://api.elftia.com/api/v1/marketplace/plugin/publish
