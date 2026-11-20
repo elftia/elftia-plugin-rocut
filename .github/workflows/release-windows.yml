@@ -38,6 +38,11 @@ jobs:
           "commit=$pin" >> $env:GITHUB_OUTPUT
           "version=$version" >> $env:GITHUB_OUTPUT
       - uses: actions/checkout@v4
+        env:
+          # Upstream compares generated browser modules with their committed LF bytes.
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
         with:
           repository: DumoeDss/rocut
           ref: ${{ steps.pin.outputs.commit }}
